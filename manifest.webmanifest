@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "Apex Circuit",
+  "short_name": "Apex Circuit",
+  "description": "An original offline low-poly time trial racer.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#172020",
+  "theme_color": "#171e20",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
