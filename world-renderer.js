@@ -5,7 +5,7 @@ window.createWorldRenderer = function () {
  const canvas = document.createElement('canvas');
  const gl = canvas.getContext('webgl', {alpha:true, antialias:true, premultipliedAlpha:true});
  if (!gl) return null;
- let program, buffer, position, color, scale, available = true;
+ let program, buffer, position, color, scale, fogColor, available = true;
  function initialize() {
   function shader(type, source) {
    const value = gl.createShader(type);
@@ -19,6 +19,7 @@ window.createWorldRenderer = function () {
    attribute vec4 color;
    uniform vec2 scale;
    varying vec4 faceColor;
+   varying float distanceToCamera;
    void main() {
     float near = 0.7;
     float far = 1800.0;
@@ -26,12 +27,14 @@ window.createWorldRenderer = function () {
       position.y * scale.y + 0.02 * position.z,
       (far + near) / (far - near) * position.z - 2.0 * far * near / (far - near),
       position.z);
-    faceColor = color;
+    faceColor = color; distanceToCamera = position.z;
    }`);
   const fragment = shader(gl.FRAGMENT_SHADER, `
    precision mediump float;
    varying vec4 faceColor;
-   void main() { gl_FragColor = faceColor; }`);
+   varying float distanceToCamera;
+   uniform vec3 fogColor;
+   void main() { float mist=clamp((distanceToCamera-95.0)/430.0,0.0,0.86); gl_FragColor=vec4(mix(faceColor.rgb,fogColor,mist),faceColor.a); }`);
   program = gl.createProgram();
   gl.attachShader(program, vertex);
   gl.attachShader(program, fragment);
@@ -43,6 +46,7 @@ window.createWorldRenderer = function () {
   position = gl.getAttribLocation(program, 'position');
   color = gl.getAttribLocation(program, 'color');
   scale = gl.getUniformLocation(program, 'scale');
+  fogColor = gl.getUniformLocation(program, 'fogColor');
   available = true;
  }
  try { initialize(); } catch { return null; }
@@ -57,7 +61,7 @@ window.createWorldRenderer = function () {
   return result;
  }
  return {
-  draw(ctx, polygons, width, height, dpr) {
+  draw(ctx, polygons, width, height, dpr, fog = '#dbe4e9') {
    if (!available || gl.isContextLost()) return false;
    const pixelWidth=Math.floor(width*dpr),pixelHeight=Math.floor(height*dpr);
    if(canvas.width!==pixelWidth||canvas.height!==pixelHeight){canvas.width=pixelWidth;canvas.height=pixelHeight;}
@@ -74,11 +78,12 @@ window.createWorldRenderer = function () {
    gl.vertexAttribPointer(color,4,gl.FLOAT,false,28,12);
    const focal=Math.min(width,height)*.93;
    gl.uniform2f(scale,2*focal/width,2*focal/height);
+   gl.uniform3fv(fogColor,rgba(fog).slice(0,3));
    const solid=[],transparent=[];
    for(const p of polygons){const color=rgba(p.color);(color[3]<1?transparent:solid).push({points:p.cameraPoints,color,depth:p.depth});}
    function batch(faces){
     const data=[];
-    for(const face of faces)for(let i=1;i<face.points.length-1;i++)for(const vertex of [face.points[0],face.points[i],face.points[i+1]])data.push(vertex.x,vertex.y,vertex.z,...face.color);
+    for(const face of faces)for(let i=1;i<face.points.length-1;i++)for(const vertex of [face.points[0],face.points[i],face.points[i+1]])data.push(vertex.x,vertex.y,vertex.z,...(vertex.vertexColor||face.color));
     gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.DYNAMIC_DRAW);
     gl.drawArrays(gl.TRIANGLES,0,data.length/7);
    }

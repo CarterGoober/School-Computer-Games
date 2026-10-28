@@ -10,11 +10,11 @@ const vehicles=[
  {id:'sf90',name:'Ferrari SF90 · tribute',kind:'supercar',color:['#c43832','#982e29','#ee5d43'],accel:22,max:58,grip:6,turn:.06,mass:.9}
 ];
 const definitions=[
- {name:'Golden Meadows',width:14,theme:'meadow',points:[[0,0,0],[0,0,90],[55,0,145],[140,0,135],[180,0,65],[140,0,-20],[45,0,-45]],jumps:[.11],obstacles:[.31,.65]},
- {name:'Canyon Postcards',width:13,theme:'desert',points:[[0,0,0],[0,0,100],[55,0,155],[110,0,130],[90,0,75],[155,0,45],[175,0,-25],[90,0,-65],[20,0,-50]],jumps:[.09,.56],obstacles:[.29,.73]},
- {name:'Pine & Switchback',width:13,theme:'alpine',points:[[0,0,0],[0,3,85],[45,6,125],[90,8,90],[55,5,45],[120,4,5],[150,0,-55],[60,0,-85],[10,0,-45]],jumps:[],obstacles:[.25,.49,.72]},
- {name:'Lakeside Leisure',width:15,theme:'meadow',points:[[0,0,0],[0,0,100],[70,0,170],[165,0,125],[200,0,45],[145,0,-35],[65,0,-65]],jumps:[.12,.61],obstacles:[.36,.78]},
- {name:'The Long Way Home',width:14,theme:'alpine',points:[[0,0,0],[0,3,110],[65,8,170],[150,12,150],[200,8,85],[155,3,20],[205,0,-45],[120,0,-110],[35,0,-85]],jumps:[.08,.41,.72],obstacles:[.23,.56,.85]}
+ {name:'Cloverleaf 8',width:15,theme:'suburb',district:'figure8',points:[[-100,0,0],[-86,0,-52],[-50,0,-52],[0,0,0],[50,0,52],[86,0,52],[100,0,0],[86,0,-52],[50,3,-52],[0,7,0],[-50,3,52],[-86,0,52]],jumps:[.12],obstacles:[.38,.67]},
+ {name:'Maplewood Loop',width:14,theme:'suburb',district:'neighborhood',points:[[0,0,0],[0,0,90],[45,0,135],[125,0,135],[180,0,80],[165,0,15],[110,0,-40],[35,0,-50]],jumps:[.1],obstacles:[.34,.68]},
+ {name:'Downtown Grid',width:15,theme:'city',district:'city',points:[[0,0,0],[0,0,90],[25,0,115],[90,0,115],[115,0,90],[115,0,55],[140,0,30],[190,0,30],[215,0,5],[215,0,-65],[190,0,-90],[25,0,-90],[0,0,-65]],jumps:[],obstacles:[.28,.57,.81]},
+ {name:'Harbor Run',width:16,theme:'port',district:'port',shore:240,points:[[0,0,0],[0,0,100],[40,0,140],[130,0,140],[185,0,100],[200,0,40],[200,0,-45],[160,0,-80],[65,0,-80],[15,0,-45]],jumps:[.1,.59],obstacles:[.3,.73]},
+ {name:'Warehouse District',width:15,theme:'city',district:'industrial',points:[[0,0,0],[0,0,105],[50,1,155],[135,3,150],[185,3,95],[150,2,35],[195,0,-40],[120,0,-100],[35,0,-80]],jumps:[.09,.43,.71],obstacles:[.26,.57,.86]}
 ];
 const base=R.definitions.length;R.definitions.push(...definitions);
 const RIDE_HEIGHT = .42;
@@ -43,7 +43,7 @@ function createTrack(id) {
   const p = track.samples[Math.floor(track.samples.length * f)];
   const offset = (i % 2 ? 1 : -1) * track.width * .29;
   return { x: p.x + p.nx * offset, z: p.z + p.nz * offset, y: p.y,
-   radius: 1.4, kind: i % 2 ? 'log' : 'hay', heading: Math.atan2(p.dx, p.dz) };
+   radius: 1.4, kind: i % 2 ? 'barrier' : 'barrels', heading: Math.atan2(p.dx, p.dz) };
  });
  return track;
 }
@@ -230,7 +230,7 @@ function step(car, track, input, dt) {
  let event = verticalStep(car, track, previous, surface, dt, true);
  car.speed = forward();
  if (!car.airborne && car.collisionCooldown === 0) {
-  for (const o of track.obstacles) {
+  for (const o of [...track.obstacles, ...(track.sceneryObstacles || [])]) {
    if (Math.hypot(car.x - o.x, car.z - o.z) >= o.radius + 1) continue;
    const dx = car.x - o.x, dz = car.z - o.z, len = Math.hypot(dx, dz) || 1;
    car.x = o.x + dx / len * (o.radius + 1.15);
@@ -244,7 +244,7 @@ function step(car, track, input, dt) {
    break;
   }
  }
- if (surface.distance > 55) { recover(car, track); return 'recovered'; }
+ if (surface.distance > 55 || (track.district === 'port' && car.x > track.shore + 2)) { recover(car, track); return 'recovered'; }
  const goal = track.checkpoints[car.nextCheckpoint];
  if (goal !== undefined) {
   const p = track.samples[goal];

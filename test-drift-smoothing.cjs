@@ -77,7 +77,7 @@ for (const direction of ['left', 'right']) {
 }
 
 // Measure real hill/ramp traversal, including each wagon's independently supported height.
-for (const route of [2,4]) {
+for (const route of [0,4]) {
  const track = D.createTrack(route), car = D.spawn(track,2);
  let maxStep = 0, maxPitch = 0, airborneWagons = 0;
  for (let i=0;i<120*160&&!car.finished;i++) {
