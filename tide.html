@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#163c46"><meta name="description" content="Captain a cargo ship or cruise liner through pirates, rescues, and wild seas. An original offline 2D boat game.">
+  <title>Tideline — Afterclass Garage</title>
+  <link rel="icon" href="icon.svg"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="tide.css">
+</head>
+<body>
+  <canvas id="sea" tabindex="0" aria-label="Side-view ocean and ship. Use D or right arrow to sail, A or left arrow to reverse, down arrow to brake, and E to interact."></canvas>
+  <header class="masthead">
+    <a href="./" class="hub-link" aria-label="Back to game hub"><span>↝</span> AFTERCLASS <b>GARAGE</b></a>
+    <span class="edition">COASTAL OPERATIONS <i>/</i> NO. 03</span>
+    <div class="top-actions"><button id="sound" aria-pressed="false">SOUND OFF</button><button id="pause" hidden aria-label="Pause voyage"><i></i><i></i></button></div>
+  </header>
+  <main id="menu">
+    <div class="menu-topline"><span class="signal-dot"></span> NORTHSTAR COASTAL SERVICE <span>EST. 2026</span></div>
+    <div class="menu-title"><p>THE SEA HAS OTHER PLANS.</p><h1>Tide<span>line.</span></h1><div class="title-rule"><span>YOUR SHIP. YOUR RESPONSIBILITY.</span><i>↗</i></div></div>
+    <section class="vessel-select" aria-labelledby="vessel-label"><h2 id="vessel-label"><span>01</span> CHOOSE YOUR VESSEL</h2>
+      <div class="vessel-options">
+        <button class="vessel selected" data-vessel="cargo" aria-pressed="true"><span class="vessel-icon" aria-hidden="true">▤</span><span><strong>Cargo ship</strong><small>M.V. WAYFARER</small></span><span class="selection-dot"></span></button>
+        <button class="vessel" data-vessel="cruise" aria-pressed="false"><span class="vessel-icon" aria-hidden="true">▱</span><span><strong>Cruise ship</strong><small>M.S. SUNDANCER</small></span><span class="selection-dot"></span></button>
+      </div>
+      <p id="vessel-brief">Load six containers. Deliver to Northstar Pier. Keep pirates off your ship with deck guns and water cannons.</p>
+    </section>
+    <section class="difficulty-select" aria-labelledby="difficulty-label"><h2 id="difficulty-label"><span>02</span> CHOOSE YOUR WATERS</h2><div class="difficulty-options"><button data-difficulty="easy" class="selected" aria-pressed="true">Easy <i>01</i></button><button data-difficulty="medium" aria-pressed="false">Medium <i>02</i></button><button data-difficulty="hard" aria-pressed="false">Hard <i>03</i></button></div><p id="difficulty-brief">Room to learn. Occasional trouble, gentler waves, three repair kits.</p></section>
+    <button class="depart primary" id="depart">TAKE THE HELM <span>→</span></button>
+    <div class="menu-bottom"><button id="instructions">CAPTAIN’S HANDBOOK <span>↗</span></button><span id="offline-status">GETTING READY</span></div>
+  </main>
+  <div id="preview-label"><span>READY AT BERTH 04</span><strong id="preview-name">M.V. Wayfarer</strong><p id="preview-spec">6 containers / 5.4 km crossing</p><div>HARBOR WEATHER <b>12°</b> <span>LIGHT SWELL ↗</span></div></div>
+  <div id="hud" hidden>
+    <section class="voyage-card" aria-label="Mission status"><div class="voyage-label"><span id="mission-title">CARGO RUN</span><b id="difficulty-badge">EASY</b></div><strong id="objective">Load the ship</strong><p id="objective-detail">Hold E at the dock to load six containers.</p><div class="route"><span>WESTHAVEN</span><div class="route-line"><i id="route-dot"></i></div><span>NORTHSTAR</span></div><div class="voyage-meta"><span id="remaining">5.4 km to dock</span><span id="manifest-count">0 / 6 CONTAINERS</span></div></section>
+    <div id="alert" class="alert" role="status" hidden><span class="alert-symbol">!</span><div><strong id="alert-title"></strong><span id="alert-detail"></span><div class="alert-track" hidden><i id="alert-progress"></i></div></div></div>
+    <div id="notice" role="status" hidden></div>
+    <div class="bridge">
+      <div class="bridge-label"><span>BRIDGE / <b id="callsign">M.V. WAYFARER</b></span><span id="voyage-clock">00:00</span></div>
+      <div class="bridge-instruments">
+        <div class="speed-instrument"><svg viewBox="0 0 112 72" aria-hidden="true"><path class="gauge-track" d="M12 62 A45 45 0 1 1 100 62"/><path id="speed-arc" d="M12 62 A45 45 0 1 1 100 62" pathLength="100"/><path class="gauge-ticks" d="M15 45l6 2 M31 18l4 6 M56 11v7 M81 18l-4 6 M97 45l-6 2"/></svg><span id="speed-value">0</span><small>KNOTS</small></div>
+        <div class="hull-instrument"><div><span>HULL INTEGRITY</span><b id="hull-value">100%</b></div><div class="instrument-track"><i id="hull-bar"></i></div><p id="hull-hint">Steady as she goes.</p></div>
+        <div class="systems-instrument"><div><span id="systems-title">WATER PRESSURE</span><b id="systems-value">100%</b></div><div class="instrument-track"><i id="systems-bar"></i></div><p id="systems-hint">Hold F · cannons on both sides</p></div>
+        <button id="repair-button" class="repair-control" title="Stop the ship, then hold R or this button"><span>＋</span><b id="repair-kits">3</b><small>HOLD R · REPAIR</small><i id="repair-progress"></i></button>
+      </div>
+      <div class="bridge-controls"><span><kbd>A</kbd><kbd>D</kbd> SAIL</span><span><kbd>S</kbd> BRAKE</span><span><kbd>E</kbd> DOCK / RESCUE</span><span id="role-control">AIM + CLICK · DECK GUN</span></div>
+    </div>
+    <button id="context-action" class="context-action"><span class="keycap">E</span><span><strong id="action-title">Load cargo</strong><small id="action-hint">Hold to operate the crane</small></span><span id="action-percent">0%</span><i id="action-progress"></i></button>
+    <div id="touch-controls"><div><button data-hold="left" aria-label="Reverse">←</button><button data-hold="brake" aria-label="Brake">STOP</button><button data-hold="right" aria-label="Sail forward">→</button></div><button data-hold="cannon" id="touch-cannon">WATER<br>CANNONS</button><button id="restart-engine" hidden>TAP TO<br>RESTART</button></div>
+  </div>
+  <div id="pause-panel" class="overlay" hidden><section class="dialog-card"><span class="eyebrow">ALL ENGINES STANDBY</span><h2>A moment<br>of calm.</h2><p>Your voyage is paused.</p><button id="resume" class="primary">BACK TO SEA →</button><button id="retry" class="secondary">RESTART THIS VOYAGE</button><button id="quit" class="text-button">CHOOSE ANOTHER SHIP</button></section></div>
+  <div id="result-panel" class="overlay" hidden><section class="dialog-card"><span class="eyebrow" id="result-eyebrow">DELIVERY COMPLETE</span><h2 id="result-title">Safe harbor.</h2><p id="result-description"></p><div class="result-stats"><div><span id="result-score">0</span><small>VOYAGE SCORE</small></div><div><span id="result-hull">100%</span><small>HULL REMAINING</small></div><div><span id="result-time">00:00</span><small>TIME AT SEA</small></div></div><p id="result-record"></p><button id="again" class="primary">ANOTHER CROSSING →</button><button id="result-quit" class="text-button">BACK TO THE FLEET</button></section></div>
+  <dialog id="handbook"><button id="close-handbook" aria-label="Close handbook">×</button><span class="eyebrow">A QUICK BRIEFING</span><h2>Welcome aboard,<br>Captain.</h2><p>Hold <b>E</b> to load at Westhaven. Sail right to Northstar Pier, slow down inside the marked berth, then hold <b>E</b> to deliver.</p><dl><dt>← / A · → / D</dt><dd>Reverse / sail forward. Up or W also sails forward.</dd><dt>↓ / S</dt><dd>Brake. Slow boats take less damage from big waves.</dd><dt>Aim + click</dt><dd>Cargo ship: shoot at pirate boats. No ammunition limit.</dd><dt>Hold F</dt><dd>Cargo ship: water cannons repel nearby pirates on both sides. Release to recharge pressure.</dd><dt>Tap Space</dt><dd>Cruise ship: restart a failed engine. Tap repeatedly; holding the key does not count.</dd><dt>Hold E</dt><dd>Load, deliver, or rescue. For a rescue, stop near the orange life ring before the timer runs out.</dd><dt>Hold R</dt><dd>Stop and repair for 3 seconds. Each kit restores up to 35% hull.</dd><dt>Esc / P</dt><dd>Pause your voyage.</dd></dl><p>Harder waters bring more incidents, larger waves, and more tsunamis. Protect the hull, repel boarding pirates, and bring every passenger home. Touch controls are also available.</p><button id="handbook-done" class="primary">GOT IT, CAPTAIN →</button></dialog>
+  <script src="tide-physics.js"></script><script src="tide-art.js"></script><script src="tide.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Afterclass Garage",
   "short_name": "Garage",
-  "description": "Two original offline driving games: Sunday Slide and Apex Circuit.",
+  "description": "Three original offline games: Tideline, Sunday Slide, and Apex Circuit.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

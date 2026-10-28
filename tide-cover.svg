@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" role="img" aria-label="A cargo ship crossing teal water beneath a quiet coastal sky">
+<defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#a5cfd4"/><stop offset="1" stop-color="#e4e7d7"/></linearGradient><linearGradient id="water" x2="0" y2="1"><stop stop-color="#4b9c9a"/><stop offset="1" stop-color="#215566"/></linearGradient></defs>
+<path fill="url(#sky)" d="M0 0h1200v420H0z"/><circle cx="1015" cy="105" r="36" fill="#f5e7b6"/><g fill="#eaf0df" opacity=".75"><path d="M650 89q-13-26 25-29 20-35 54-4 35-12 45 22 29 7 10 20z"/><path d="M946 55q-10-23 20-30 24-28 50-3 33-5 35 24 20 9 0 19z"/></g>
+<path d="M350 216Q500 129 614 171T853 164T1200 184V300H350" fill="#a7bec0"/><path d="M390 245Q570 168 713 217T1020 209T1200 211V300H390" fill="#80a8a5"/>
+<g fill="#cbd7c7"><path d="M651 255v-40h29v40m40 0v-31h25v31m293 0v-40h31v40m60 0v-32h27v32"/></g><g fill="#678d89"><path d="m646 215 20-16 20 16m27 9 19-15 20 15m280-9 22-16 22 16m39 8 18-17 21 17"/></g>
+<path d="M0 263Q230 240 430 262T760 269Q930 284 1080 246T1200 251V420H0" fill="url(#water)"/>
+<path d="M0 263Q230 240 430 262T760 269Q930 284 1080 246T1200 251" stroke="#c5e3cb" stroke-width="2" fill="none"/>
+<g transform="translate(880 256) rotate(-5)">
+<path d="m-182-25 351-5q22-1 3 24-19 34-55 39h-268q-25-4-31-58" fill="#25434e"/><path d="m-175 7 340-5-24 27-25 8h-264l-19-13" fill="#ba7962"/><path d="m-181-21 356-5" stroke="#ecdbad" stroke-width="4"/>
+<path d="M-160-78h70v50h-70z" fill="#e0d8be"/><path d="M-150-110h64v34h-64z" fill="#eeead6"/><path d="M-155-114h77v6h-77z" fill="#466770"/>
+<g fill="#5e858c"><path d="M-146-103h11v16h-11zm15 0h11v16h-11zm15 0h11v16h-11zm15 0h11v16h-11z"/><path d="M-155-63h17v31h-17z"/></g>
+<path d="M-135-137h18v23h-18z" fill="#496975"/><path d="M-135-133h18v7h-18z" fill="#d39369"/><path d="M-98-112v-45m-20 18h39" stroke="#648586" stroke-width="2"/>
+<g stroke="#314d4b33"><path d="M-77-68h56v38h-56z" fill="#daae6b"/><path d="M-18-68h56v38h-56z" fill="#7b9c91"/><path d="M41-68h56v38H41z" fill="#bb7c67"/><path d="M-77-109h56v38h-56z" fill="#7b9c91"/><path d="M-18-109h56v38h-56z" fill="#c3b37f"/><path d="M41-109h56v38H41z" fill="#bd8a6e"/></g>
+<g stroke="#284b4a33" stroke-width="2"><path d="M-70-104v28m8-28v28m8-28v28m8-28v28m8-28v28m8-28v28M-11-104v28m8-28v28m8-28v28m8-28v28m8-28v28m8-28v28M48-104v28m8-28v28m8-28v28m8-28v28m8-28v28m8-28v28M-70-63v28m8-28v28m8-28v28m8-28v28m8-28v28m8-28v28M-11-63v28m8-28v28m8-28v28m8-28v28m8-28v28m8-28v28M48-63v28m8-28v28m8-28v28m8-28v28m8-28v28m8-28v28"/></g>
+<g fill="#1f3a44" stroke="#6a8989" stroke-width="3"><circle cx="-155" cy="-13" r="8"/><circle cx="-104" cy="-14" r="8"/><circle cx="-53" cy="-15" r="8"/><circle cx="-2" cy="-16" r="8"/><circle cx="49" cy="-17" r="8"/><circle cx="100" cy="-18" r="8"/></g>
+<path d="M129-29v-37m0 1 28 4-28 14" fill="#d7916b" stroke="#5c7e7f"/><path d="M-170-29v-17m20 17v-17m20 17v-17m20 17v-17m20 17v-17m20 17v-17m20 17v-17m20 17v-17m20 17v-17M-170-46H100" fill="none" stroke="#a9c0b1"/>
+</g>
+<g stroke="#b5dfca" opacity=".24" fill="none"><path d="M575 310q30-6 65 0m60 11q40-9 70-3m84 17q50-8 89-1m40-26 75-2M520 355q80-10 110-2m132 23 94-5m88 24 85-3m69-40 70-3M580 401l95-4"/></g>
+</svg>
