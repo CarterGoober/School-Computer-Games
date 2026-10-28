@@ -1,31 +1,53 @@
-# Apex Circuit
+# Afterclass Garage
 
-An original low-poly time trial racing game. Three original circuits, a 3D chase camera, keyboard/touch driving, checkpoint recovery, personal bests, optional synthesized engine sound, and offline installation. No external assets, dependencies, accounts, or game links. This is an original game, not PolyTrack or a copy of its code, levels, or artwork.
+An installable, offline game hub with two original low-poly driving games. No external game links, assets, dependencies, accounts, or ads.
 
-## Play locally
+## Games
+
+**Apex Circuit** (`apex.html`): the original precision time trial racer, with three circuits, checkpoint recovery, and device-local personal bests. Existing Apex lap records remain intact.
+
+**Sunday Slide** (`drift.html`): a relaxed countryside drift-and-jump racer. Warm colors, cottages, fences, dusty roads, and an original scenic style. Five routes:
+
+| Route | Character | Jumps | Obstacles |
+| --- | --- | --- | --- |
+| Golden Meadows | Broad, easy sweepers | 1 | 2 |
+| Canyon Postcards | Desert curves | 2 | 2 |
+| Pine & Switchback | Technical hairpins | 0 | 3 |
+| Lakeside Leisure | Wide lakeside roads | 2 | 2 |
+| The Long Way Home | Rolling elevated roads | 3 | 3 |
+
+Four vehicles have different acceleration, grip, steering, and maximum speeds: Sunset Coupe, Trail Pickup, Little Locomotive (with two following wagons), and a stylized Ferrari SF90 fan tribute. Models are original low-poly approximations without branded logos; this is not an official Ferrari product. Sunday Slide is not affiliated with Over the Hill.
+
+Steer while holding the handbrake to slide and earn style points. Sustained slides increase a multiplier. Ramp jumps earn airtime bonuses and trigger a slow-motion orbiting camera with letterbox bars. Turn **JUMP CAM** off to keep real-time driving and the regular chase camera; it defaults off for reduced-motion preferences. Obstacles are solid: hitting a hay bale or log slows/rebounds the vehicle and adds one second. A complete lap requires all four checkpoints. Best lap times are stored separately for each vehicle and route. Drift score is shown during and at the end of each run.
+
+## Run locally
 
 ```sh
 cd /workspace/School-Computer-Games
 python3 -m http.server 8000 --bind 0.0.0.0
 ```
 
-Use Chrome to load the server. Keyboard: WASD or arrows to drive, Space to handbrake, C to recover (+2 seconds), R to restart, Escape to pause. Checkpoints must be collected in order before crossing the finish line. Off-road driving slows the car. Inactive windows pause automatically. Personal bests are saved to this browser/device, with a session-only fallback if storage is unavailable.
+No installation or build needed. Open the served root to choose a game.
+
+Controls: WASD or arrow keys to drive; Space for handbrake/drift; C to recover (+2 seconds); R to restart; Escape to pause/resume. Pointer/touch buttons appear on coarse-pointer devices, with a dedicated drift button in Sunday Slide. Inactive windows pause automatically. Click the upper-left HUB logo to return to the hub.
 
 ## Install on a Chromebook
 
-Serve these files on an HTTPS static host (for example, GitHub Pages). Open the hosted app once in Chrome. Wait for **OFFLINE READY**, then choose **Install Apex Circuit** from Chrome's menu or the in-game install button. Launch it from the Chromebook Launcher; it opens in its own standalone app window. After caching, all tracks work without internet. Clearing site data removes offline files and best times. The initial download and installation require an allowed connection and browser installation permissions. This does not bypass school network or device policies. A managed Chromebook may block installation.
+Host the files at an HTTPS static host such as GitHub Pages. Open the hub once, wait for **OFFLINE READY**, then use **Install the garage** when available or Chrome's **Install page as app** menu command. Launch Afterclass Garage from the Chromebook Launcher to open it in a standalone app window. Both games and all routes are cached for offline use. Initial load requires an allowed internet connection and installation requires browser/device permission. This app does not bypass school restrictions. Localhost is also a secure context for development; file:// and remote plain HTTP do not support PWA installation.
 
-Localhost also supports service workers for development. A plain remote HTTP host or opening index.html as a file does not support offline installation. No native ChromeOS executable or extension is needed: this is an installable Progressive Web App. You still need to host it or use a local development server for the first load.
+Existing installed copies of Apex Circuit use the same app identity and scope. After deploying this update, reopen/reload while online so the new service worker installs, then reload to see the hub. Existing lap records are preserved. Clearing site data removes records and cached files.
 
-## Validation
+## Verify
 
 ```sh
 node --check app.js
-node --check physics.js
+node --check drift.js
+node --check hub.js
 node --check sw.js
 node test-physics.cjs
+node test-drift.cjs
 ```
 
-Browser smoke checks should cover starting a lap, acceleration and steering, pause/resume, restart, recovery, circuit selection, saved bests, install manifest, and reloading offline after service worker activation. The renderer uses Canvas 2D to project original 3D geometry, with fixed-step driving simulation and capped pixel density for modest hardware. No build step is required.
+Physics tests drive complete circuits, exercise ordered checkpoints, acceleration, drift scoring, each vehicle, wagon following, jumping/landing, recovery, and obstacle penalties. Browser checks cover hub navigation, vehicle/track selection, keyboard driving, jump cinematics, camera toggle, pause, responsive layouts, and offline reload/driving in both games. Rendering uses a local Canvas 2D software projection of 3D geometry, with capped pixel density and fixed-step physics.
 
-When changing cached assets, increment the version in `sw.js` so installed clients receive the new bundle.
+All game assets must be included in `sw.js`. Increment its cache version after changing cached assets. Deploy the repository root with GitHub Pages using `main` / `(root)`; `.nojekyll` prevents a Jekyll build. No credentials are shipped to clients.
