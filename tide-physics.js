@@ -23,7 +23,7 @@
       loadingActive: false, boardingTime: 0, source: 200, destination: spec.destination, load: 0, unload: 0, onboard: 0, repair: 0, repairKits: config.repairKits, crane: vessel === 'cargo' ? Crane.create(200) : null,
       eventIn: config.eventEvery * .56, waveIn: config.waveEvery * .65, eventNumber: 0, waves: [], pirates: [], shots: [], effects: [],
       swimmer: null, shotCooldown: 0, spray: false, repairActive: false, notice: null, failure: '', score: 0, nextId: 1,
-      stats: { pirates: 0, rescues: 0, restarts: 0, events: 0, waves: 0, tsunamis: 0, shots: 0, damage: 0 }
+      stats: { cargoLost: 0, pirates: 0, rescues: 0, restarts: 0, events: 0, waves: 0, tsunamis: 0, shots: 0, damage: 0 }
     };
   }
   function sea(s, x) {
@@ -101,7 +101,7 @@
   }
   function interaction(s) {
     const slow = Math.abs(s.ship.vx) < 23;
-    if (s.stage === 'loading' && s.crane) return { label: s.onboard === 6 ? 'Leave crane & set sail' : 'Load with the crane', hint: s.onboard === 6 ? 'All six containers secured · press E to sail' : 'WASD to move the hook · Space to grab / release', ready: s.onboard === 6, progress: s.load };
+    if (s.stage === 'loading' && s.crane) return { label: 'Leave crane & set sail', hint: Crane.ready(s.crane) ? 'All six aboard · E to sail, or keep adjusting the stack' : s.onboard===6 ? 'Wait for sliding cargo to settle before sailing' : 'WASD to move the hook · Space to grab / release', ready: Crane.ready(s.crane), progress: s.load };
     if (s.stage === 'loading') return { label: s.vessel === 'cargo' ? 'Load cargo' : 'Board passengers', hint: s.vessel === 'cargo' ? 'Hold E to operate the loading crane' : 'Hold E to welcome your passengers', ready: true, progress: s.load };
     if (s.swimmer) {
       const near = Math.abs(s.ship.x - s.swimmer.x) < s.spec.length / 2 + 95;
@@ -112,21 +112,21 @@
   }
   function complete(s) {
     s.stage = 'complete'; s.ship.vx = 0; s.spray = false;
-    s.score = Math.round(1000 + s.ship.hull * 10 + s.stats.pirates * 150 + s.stats.rescues * 200 + Math.max(0, 400 - s.voyageTime * 2) + { easy: 0, medium: 400, hard: 900 }[s.difficulty]);
+    const delivered=s.vessel==='cargo'?s.onboard/s.spec.capacity:1;
+    s.score = Math.round((1000 + s.ship.hull * 10 + Math.max(0, 400 - s.voyageTime * 2) + { easy: 0, medium: 400, hard: 900 }[s.difficulty])*delivered + s.stats.pirates * 150 + s.stats.rescues * 200);
   }
   function craneAction(s) {
     if (s.stage !== 'loading' || !s.crane) return false;
-    if (s.onboard === 6) { notify(s, 'ALL CARGO SECURED · Press E to leave the crane and sail.', 'good'); return false; }
     const result = Crane.action(s.crane); notify(s, result.message, result.changed ? 'good' : 'info'); return result.changed;
   }
   function depart(s) {
-    if (s.stage !== 'loading' || !s.crane || Crane.loaded(s.crane) !== 6 || s.crane.held !== null) return false;
-    s.stage = 'sailing'; notify(s, 'LINES OFF · Northstar Pier is to the right. Hold D or → to sail.', 'good'); return true;
+    if (s.stage !== 'loading' || !s.crane || !Crane.ready(s.crane)) return false;
+    s.crane.sailing=true;s.stage = 'sailing'; notify(s, 'LINES OFF · Northstar Pier is to the right. Hold D or → to sail.', 'good'); return true;
   }
   function step(s, input = {}, dt = 1 / 60) {
     if (s.stage === 'complete' || s.stage === 'failed') return;
-    dt = clamp(dt, 0, 1 / 30); s.time += dt;
-    const ship = s.ship, config = s.config;
+    dt = clamp(dt, 0, 1 / 30); if(dt<=0)return; s.time += dt;
+    const ship = s.ship, config = s.config,previousVx=s.ship.vx,previousAngular=s.ship.angular;
     s.shotCooldown = Math.max(0, s.shotCooldown - dt);
     for (const e of s.effects) e.age += dt;
     s.effects = s.effects.filter(e => e.age < 1.1);
@@ -135,8 +135,8 @@
       const previous = s.onboard, recovered = s.crane.recovered, perfects = s.crane.perfects;
       Crane.step(s.crane, input, dt); s.onboard = Crane.loaded(s.crane); s.load = s.onboard / s.spec.capacity;
       if (s.crane.recovered > recovered) notify(s, 'DOCK CREW RECOVERED THE BOX · Pick it up and try again.', 'warning');
-      if (s.crane.perfects > perfects) notify(s, `PERFECT PLACEMENT · +120 points · ${s.onboard} / 6 secured.${s.onboard===6?' Press E to sail.':''}`, 'good');
-      else if (s.onboard > previous) notify(s, s.onboard === 6 ? 'ALL CARGO SECURED · Press E to leave the crane and sail.' : `CONTAINER SECURED · ${s.onboard} / 6 loaded.`, 'good');
+      if (s.crane.perfects > perfects) notify(s, `PERFECT PLACEMENT · ${s.onboard} / 6 aboard.${s.onboard===6?' Press E to sail.':''}`, 'good');
+      else if (s.onboard > previous) notify(s, s.onboard === 6 ? 'ALL CARGO ABOARD · Let it settle, then E to sail. Space can still adjust boxes.' : `CONTAINER ON DECK · ${s.onboard} / 6 aboard. Leave room for a balanced stack.`, 'good');
       // Mooring holds the deck steady while cargo is being handled. Ship controls unlock on departure.
       ship.x = s.source; ship.vx = ship.y = ship.vy = ship.angle = ship.angular = 0;
       if (s.onboard === 6 && input.interact) depart(s);
@@ -198,6 +198,7 @@
         const exposed = Math.min(Math.abs(ship.x - s.source), Math.abs(ship.x - s.destination)) > 440;
         if (exposed) {
           const impact = config.damage * (w.tsunami ? 2 : 1) * (.55 + Math.abs(ship.vx) / s.spec.maxSpeed * 1.8);
+          if(s.crane)Crane.Cargo.impact(s.crane,(w.tsunami?25:12)*(w.height/70)*(.55+Math.abs(ship.vx)/s.spec.maxSpeed));
           damage(s, impact); ship.vx *= w.tsunami ? .56 : .76;
           s.effects.push({ x: ship.x + 100, y: ship.y, age: 0, kind: 'splash' });
           if (s.stage !== 'failed') notify(s, `WAVE IMPACT · ${Math.round(impact)}% hull damage.`, 'warning');
@@ -209,6 +210,11 @@
     const targetY = (front + back) * .5, targetAngle = Math.atan2(front - back, half * 2);
     ship.vy += ((targetY - ship.y) * 32 - ship.vy * 10) * dt; ship.y += ship.vy * dt;
     ship.angular += ((targetAngle - ship.angle) * 25 - ship.angular * 9) * dt; ship.angle += ship.angular * dt;
+    if(s.crane&&s.stage==='sailing'){
+      const lost=Crane.Cargo.step(s.crane,dt,{x:ship.x,y:ship.y,angle:ship.angle,vx:ship.vx,vy:ship.vy,accel:(ship.vx-previousVx)/dt,alpha:(ship.angular-previousAngular)/dt});
+      s.stats.cargoLost=s.crane.lost;s.onboard=s.spec.capacity-s.crane.lost;
+      if(lost.length){for(const b of lost)s.effects.push({x:b.world.x,y:sea(s,b.world.x),age:0,kind:'splash'});notify(s,`CARGO OVERBOARD · ${s.onboard}/6 left · Completion bonus reduced by ${Math.round(s.crane.lost/6*100)}%.`,'danger');}
+    }
     for (const p of s.pirates) {
       if (p.hp <= 0) { p.sunk += dt; continue; }
       const target = ship.x + p.side * (s.spec.length / 2 + 65), distance = target - p.x;
@@ -240,7 +246,7 @@
     s.shots = s.shots.filter(shot => shot.age < 1.5);
   }
   function boardingPassengers(s){return Array.from({length:s.spec.capacity},(_,i)=>{const t=clamp((s.load*(s.spec.capacity+10)-i)/10,0,1),ramp=clamp((t-.22)/.78,0,1);return{id:i,progress:t,aboard:t>=1,x:t<.22?-275+t/.22*30:-245+ramp*108,y:-7-ramp*36,phase:s.boardingTime*12+i*1.7};});}
-  const api = { boardingPassengers, clamp, difficulties, vessels, create, step, sea, interaction, triggerIncident, spawnWave, tapRestart, fire, gunPosition, Crane, craneAction, depart };
+  const api = { boardingPassengers, clamp, difficulties, vessels, create, step, sea, interaction, triggerIncident, spawnWave, tapRestart, fire, gunPosition, Crane, Cargo:Crane.Cargo, craneAction, depart };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Tide = api;
 })(typeof window !== 'undefined' ? window : globalThis);

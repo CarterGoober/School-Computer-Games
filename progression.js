@@ -1,6 +1,7 @@
 (function(root){
   'use strict';
   const C=typeof module!=='undefined'&&module.exports?require('./garage-catalog.js'):root.GarageCatalog;
+  const rewardRates=Object.freeze({raceFinish:70,raceBest:44,jump:9,driftSecond:2,load:4,perfectLoad:24,pirate:14,restart:8,rescue:20,voyageFinish:80,voyageBest:40});
   const memory={},writeFailed={},clamp=(n,a,b)=>Math.max(a,Math.min(b,n));let serial=0,storageOK=true;
   function dateKey(now=new Date()){return`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;}
   const taskPool={
@@ -8,7 +9,7 @@
     drift:[['driftSeconds',10,'Hold drifts for 10 seconds total',180],['jumps',2,'Hit 2 jumps',160],['checkpoints',4,'Pass 4 checkpoints',120],['best',1,'Beat a personal best',220]],
     tide:[['loads',6,'Load 6 cargo containers',180],['pirates',2,'Repel 2 pirate boats',180],['restarts',1,'Restart a cruise engine',160],['rescues',1,'Rescue a passenger',180],['perfectLoads',2,'Make 2 perfect cargo placements',220]]
   };
-  function tasks(game,day=dateKey()){const hash=[...day].reduce((a,c)=>a*31+c.charCodeAt(0),0)>>>0,pool=taskPool[game],first=hash%pool.length;return[['finishes',1,game==='tide'?'Complete a delivery':'Finish a race',200],pool[first],pool[(first+1)%pool.length]].map(([event,goal,label,reward],id)=>({id:`${day}:${id}`,event,goal,label,reward}));}
+  function tasks(game,day=dateKey()){const hash=[...day].reduce((a,c)=>a*31+c.charCodeAt(0),0)>>>0,pool=taskPool[game],first=hash%pool.length;return[['finishes',1,game==='tide'?'Complete a delivery':'Finish a race',200],pool[first],pool[(first+1)%pool.length]].map(([event,goal,label,reward],id)=>({id:`${day}:${id}`,event,goal,label,reward:Math.round(reward*.2)}));}
   function fresh(game){return{version:1,balance:0,earned:0,owned:[...C.games[game].starters],liveries:[],equipped:{vehicle:C.games[game].starters[0],paints:{}},daily:{date:dateKey(),progress:{},claimed:[]},events:[],bestTimes:{},lastDrop:null};}
   function normalize(game,data){
     const p=fresh(game);if(!data||typeof data!=='object')return p;
@@ -52,28 +53,28 @@
     if(run.previous){const distance=Math.hypot(car.x-run.previous.x,car.z-run.previous.z);if(distance<Math.abs(car.speed)*dt+2)run.distance+=distance;}
     run.previous={x:car.x,z:car.z};if(run.distance>=50){const n=Math.floor(run.distance/50)*50;earn(run,'distance',n,0);run.distance-=n;}
     if(car.nextCheckpoint>run.checkpoints){earn(run,'checkpoints',car.nextCheckpoint-run.checkpoints,0);run.checkpoints=car.nextCheckpoint;}
-    if((car.jumps||0)>run.jumps){earn(run,'jumps',car.jumps-run.jumps,(car.jumps-run.jumps)*45);run.jumps=car.jumps;}
-    if(run.game==='drift'&&!car.airborne&&car.driftAngle>.13&&Math.abs(car.speed)>8){run.drift+=dt;if(run.drift>=1){const n=Math.floor(run.drift);earn(run,'driftSeconds',n,n*12);run.drift-=n;}}else run.drift=0;
+    if((car.jumps||0)>run.jumps){earn(run,'jumps',car.jumps-run.jumps,(car.jumps-run.jumps)*rewardRates.jump);run.jumps=car.jumps;}
+    if(run.game==='drift'&&!car.airborne&&car.driftAngle>.13&&Math.abs(car.speed)>8){run.drift+=dt;if(run.drift>=1){const n=Math.floor(run.drift);earn(run,'driftSeconds',n,n*rewardRates.driftSecond);run.drift-=n;}}else run.drift=0;
   }
   function updateBoat(run,s){
     if(!run||run.done)return;const mult={easy:1,medium:1.5,hard:2.2}[s.difficulty]||1;
     const values={loads:s.crane?CCount(s.crane):0,perfectLoads:s.crane?.perfects||0,pirates:s.stats.pirates,restarts:s.stats.restarts,rescues:s.stats.rescues};
-    for(const [name,n]of Object.entries(values)){const previous=run.boat[name]||0;if(n>previous)earn(run,name,n-previous,(n-previous)*({loads:20,perfectLoads:120,pirates:70,restarts:40,rescues:100}[name])*(name==='loads'||name==='perfectLoads'?1:mult));run.boat[name]=Math.max(previous,n);}
+    for(const [name,n]of Object.entries(values)){const previous=run.boat[name]||0;if(n>previous)earn(run,name,n-previous,(n-previous)*({loads:rewardRates.load,perfectLoads:rewardRates.perfectLoad,pirates:rewardRates.pirate,restarts:rewardRates.restart,rescues:rewardRates.rescue}[name])*(name==='loads'||name==='perfectLoads'?1:mult));run.boat[name]=Math.max(previous,n);}
   }
-  function CCount(crane){return crane.boxes.filter(b=>b.status==='loaded').length;}
+  function CCount(crane){return crane.boxes.filter(b=>b.loadedOnce).length;}
   function finishRace(run,{time,best,trackId=0}){
     if(!run||run.done||!Number.isFinite(time)||time<=0)return null;
     const mult=(run.game==='apex'?[1,1.25,1.5]:[1.15,1,1.25,1.4,1.6])[trackId]||1;
-    const base=Math.round(350*mult),speed=Math.round(clamp(850-time*10,0,650)*mult),pb=Number.isFinite(best)&&time<best-.001?Math.round(220*mult):0;
+    const base=Math.round(rewardRates.raceFinish*mult),speed=Math.round(clamp(170-time*2,0,130)*mult),pb=Number.isFinite(best)&&time<best-.001?Math.round(rewardRates.raceBest*mult):0;
     earn(run,'finishes',1,base+speed);if(pb)earn(run,'best',1,pb);run.done=true;return run.finish={base,speed,pb,mult,total:run.awarded,daily:run.daily};
   }
   function finishBoat(run,s){
     if(!run||run.done)return null;updateBoat(run,s);
     if(s.stage!=='complete'){run.done=true;return{total:run.awarded,daily:run.daily};}
-    const mult={easy:1,medium:1.5,hard:2.2}[s.difficulty]||1,p=read('tide'),key=`${s.vessel}:${s.difficulty}`,best=p.bestTimes[key],pb=best&&s.voyageTime<best?Math.round(200*mult):0;
-    const base=Math.round(400*mult),speed=Math.round(clamp(360-s.voyageTime*2,0,360)*mult);earn(run,'finishes',1,base+speed);if(pb)earn(run,'best',1,pb);
-    const fresh=read('tide');fresh.bestTimes[key]=Math.min(best||Infinity,s.voyageTime);save('tide',fresh);run.done=true;return run.finish={base,speed,pb,mult,total:run.awarded,daily:run.daily};
+    const mult={easy:1,medium:1.5,hard:2.2}[s.difficulty]||1,p=read('tide'),key=`${s.vessel}:${s.difficulty}`,best=p.bestTimes[key],cargoLost=s.vessel==='cargo'?clamp(s.stats.cargoLost||0,0,6):0,pb=!cargoLost&&best&&s.voyageTime<best?Math.round(rewardRates.voyageBest*mult):0;
+    const base=Math.round(rewardRates.voyageFinish*mult),speed=Math.round(clamp(72-s.voyageTime*.4,0,72)*mult),cargoPenalty=Math.round((base+speed)*cargoLost/6),completion=base+speed-cargoPenalty;earn(run,'finishes',1,completion);if(pb)earn(run,'best',1,pb);
+    const fresh=read('tide');if(!cargoLost)fresh.bestTimes[key]=Math.min(best||Infinity,s.voyageTime);save('tide',fresh);run.done=true;return run.finish={base,speed,pb,mult,cargoLost,cargoPenalty,completion,total:run.awarded,daily:run.daily};
   }
-  const api={catalog:C,dateKey,tasks,read,event,purchase,equip,appearance,begin,updateDrive,updateBoat,finishRace,finishBoat,get storageAvailable(){return storageOK;}};
+  const api={catalog:C,rewardRates,dateKey,tasks,read,event,purchase,equip,appearance,begin,updateDrive,updateBoat,finishRace,finishBoat,get storageAvailable(){return storageOK;}};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Progression=api;
 })(typeof window!=='undefined'?window:globalThis);

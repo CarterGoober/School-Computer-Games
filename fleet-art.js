@@ -68,8 +68,9 @@
     else if(v.kind==='plane'){ctx.moveTo(-100,-8);ctx.lineTo(-24,-17);ctx.lineTo(-60,-53);ctx.lineTo(-25,-53);ctx.lineTo(20,-15);ctx.lineTo(100,-8);ctx.lineTo(100,11);ctx.lineTo(22,17);ctx.lineTo(-17,52);ctx.lineTo(-47,52);ctx.lineTo(-21,19);ctx.lineTo(-100,14);ctx.closePath();}
     else if(v.kind==='heart'){ctx.moveTo(93,0);ctx.bezierCurveTo(32,-75,-52,-62,-48,-9);ctx.bezierCurveTo(-100,-36,-105,29,-52,38);ctx.closePath();}
     else ctx.roundRect(-83,v.kind==='crate'?-55:-19,167,v.kind==='crate'?83:47,8);
-    ctx.fillStyle=p?.body||v.color[0];ctx.fill();ctx.save();ctx.clip();if(p)pattern(ctx,p,-100,-55,200,100);ctx.restore();
-    if(ship){ctx.fillStyle=v.kind==='cargo'?'#e9dfc3':'#ede9dd';ctx.fillRect(-70,-54,36,47);if(v.kind==='cargo'){for(let i=0;i<6;i++){ctx.fillStyle=C.models.coupe.color[i%3];ctx.fillRect(-23+i%3*30,-33-Math.floor(i/3)*23,28,22);}}else{ctx.fillRect(-65,-40,139,31);ctx.fillRect(-48,-58,110,18);for(let i=0;i<10;i++){ctx.fillStyle='#4c7e8e';ctx.fillRect(-57+i*12,-32,7,7);ctx.fillRect(-39+i*9,-51,5,5);}}}
+    ctx.fillStyle=p?.body||v.color[0];ctx.fill();ctx.save();ctx.clip();if(p)pattern(ctx,p,-100,ship?-65:-55,200,ship?103:100);ctx.restore();
+    function paintedRect(x,y,w,h){ctx.fillStyle=p?.body||'#ede9dd';ctx.fillRect(x,y,w,h);if(p){ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();pattern(ctx,p,-100,-65,200,103);ctx.restore();}}
+    if(ship){paintedRect(-70,-54,36,47);if(v.kind==='cargo'){for(let i=0;i<6;i++){ctx.fillStyle=C.models.coupe.color[i%3];ctx.fillRect(-23+i%3*30,-33-Math.floor(i/3)*23,28,22);}}else{paintedRect(-65,-40,139,31);paintedRect(-48,-58,110,18);for(let i=0;i<10;i++){ctx.fillStyle=p?shade(p.body,.38):'#4c7e8e';ctx.fillRect(-57+i*12,-32,7,7);ctx.fillRect(-39+i*9,-51,5,5);}}}
     else if(v.kind!=='crate'&&v.kind!=='heart'){ctx.fillStyle='#92bdc8';ctx.beginPath();ctx.moveTo(-27,-18);ctx.lineTo(-10,-42);ctx.lineTo(34,-42);ctx.lineTo(52,-18);ctx.closePath();ctx.fill();}
     else if(v.kind==='crate'){ctx.strokeStyle='#6e533b';ctx.lineWidth=5;ctx.strokeRect(-81,-53,163,78);for(let i=-60;i<80;i+=35){ctx.beginPath();ctx.moveTo(i,-51);ctx.lineTo(i,24);ctx.stroke();}}
     if(v.kind==='gt3'){ctx.fillStyle=p?.accent||'#31556a';ctx.fillRect(-81,-42,8,27);ctx.fillRect(-96,-46,39,6);}

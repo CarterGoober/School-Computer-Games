@@ -29,17 +29,17 @@ function pause() { if (mode !== 'playing') return; setMode('paused'); $('#resume
 function resume() { if (mode !== 'paused') return; setMode('playing'); canvas.focus(); }
 function menu() { setMode('menu');document.querySelector(`[data-vessel="${Progression.read('tide').equipped.vehicle}"]`).click(); $('#depart').focus(); }
 function finish() {
-  const earned=Progression.finishBoat(progressRun,voyage);$('#earned-points').textContent=earned?`+${earned.total.toLocaleString()} Tide points${earned.mult?' · '+earned.mult+'× mission rewards':''} · ${earned.daily} daily rewards`:'';
+  const earned=Progression.finishBoat(progressRun,voyage);$('#earned-points').textContent=earned?`+${earned.total.toLocaleString()} Tide points${earned.mult?' · '+earned.mult+'× mission rewards':''} · ${earned.daily} daily rewards${earned.cargoLost?' · −'+earned.cargoPenalty+' completion points ('+earned.cargoLost+' cargo lost)':''}`:'';
   const won = voyage.stage === 'complete', key = `${vessel}-${difficulty}`;
   const old = Number.isFinite(records[key]) && records[key] > 0 ? records[key] : 0;
   let record = false;
   if (won && voyage.score > old) { records[key] = voyage.score; record = true; try { localStorage.setItem('tideline-voyages', JSON.stringify(records)); } catch { storageAvailable = false; } }
   setMode('result');
-  $('#result-eyebrow').textContent = won ? 'MANIFEST DELIVERED / ALL ACCOUNTED FOR' : 'VOYAGE ENDED';
+  $('#result-eyebrow').textContent = won ? (voyage.stats.cargoLost?'DELIVERY COMPLETE / CARGO LOST':'MANIFEST DELIVERED / ALL ACCOUNTED FOR') : 'VOYAGE ENDED';
   $('#result-title').textContent = won ? 'Safe harbor.' : voyage.ship.hull <= 0 ? 'Lost at sea.' : 'Try another tide.';
-  $('#result-description').textContent = won ? (vessel === 'cargo' ? `All six containers delivered. ${countLabel(voyage.stats.pirates, 'pirate boat')} repelled along the way.` : `All 24 passengers delivered safely. ${countLabel(voyage.stats.rescues, 'rescue')} and ${countLabel(voyage.stats.restarts, 'engine restart')}.`) : voyage.failure;
-  $('#result-score').textContent = voyage.score.toLocaleString(); $('#result-hull').textContent = `${Math.round(voyage.ship.hull)}%`; $('#result-time').textContent = clock(voyage.voyageTime);
-  $('#result-record').textContent = won ? `${record ? 'A new personal best for this ship and difficulty.' : `Personal best: ${old.toLocaleString()}.`}${storageAvailable ? '' : ' Records are saved for this session only.'}` : 'Every crossing is a fresh start. Your ship and supplies will be restored.';
+  $('#result-description').textContent = won ? (vessel === 'cargo' ? `${voyage.onboard} of 6 containers delivered. ${voyage.stats.cargoLost?countLabel(voyage.stats.cargoLost,'container')+' lost overboard. ':''}${countLabel(voyage.stats.pirates, 'pirate boat')} repelled along the way.` : `All 24 passengers delivered safely. ${countLabel(voyage.stats.rescues, 'rescue')} and ${countLabel(voyage.stats.restarts, 'engine restart')}.`) : voyage.failure;
+  $('#result-score').textContent = (earned?.total||0).toLocaleString(); $('#result-hull').textContent = `${Math.round(voyage.ship.hull)}%`; $('#result-time').textContent = clock(voyage.voyageTime);
+  $('#result-record').textContent = won ? `Voyage score: ${voyage.score.toLocaleString()}. ${record ? 'A new personal best for this ship and difficulty.' : `Personal best: ${old.toLocaleString()}.`}${storageAvailable ? '' : ' Records are saved for this session only.'}` : 'Every crossing is a fresh start. Your ship and supplies will be restored.';
   $('#again').focus();
 }
 $('#depart').onclick = start; $('#retry').onclick = start; $('#again').onclick = start; $('#pause').onclick = pause; $('#resume').onclick = resume; $('#quit').onclick = menu; $('#result-quit').onclick = menu;
@@ -97,18 +97,19 @@ function updateHud() {
   const s = voyage, ship = s.ship, cargo = s.vessel === 'cargo', context = Tide.interaction(s), remaining = Math.abs(s.destination - ship.x);
   const loadingCrane = craneLoading(); document.body.classList.toggle('crane-mode',loadingCrane); $('#crane-panel').hidden = !loadingCrane;
   if(loadingCrane){
-    const c=s.crane,held=c.held!==null,canGrab=Tide.Crane.grabCandidate(c),done=s.onboard===6;
-    $('#crane-count').textContent=`${s.onboard} / 6 SECURED`;
+    const c=s.crane,held=c.held!==null,canGrab=Tide.Crane.grabCandidate(c),done=Tide.Crane.ready(c);
+    $('#crane-count').textContent=`${s.onboard} / 6 ON DECK`;
     $('#crane-swing').textContent=`${Math.round(Math.abs(c.angle)*180/Math.PI)}° SWING`;
-    $('#crane-state').textContent=done?'All cargo aboard. Ready to sail.':c.blocked?'Lift higher to clear the stack.':held?'Cargo attached. Lift, move, lower, release.':canGrab?'Hook aligned. Tap Space to grab.':'Move above a dock box and lower the hook.';
-    $('#crane-grab-label').textContent=done?'ALL LOADED':held?'RELEASE CARGO':canGrab?'GRAB CARGO':'GRAB / RELEASE';
-    $('#crane-grab').classList.toggle('ready',!!canGrab||held);$('#crane-grab').disabled=done;
+    $('#crane-state').textContent=done?(Tide.Cargo.risk(c)?'Overhanging stack. Rebalance it, or E to take the risk.':'All cargo aboard. Adjust with Space, or E to sail.'):c.blocked?'Lift higher to clear the stack.':held?'Cargo attached. Lift, move, lower, release.':canGrab?'Hook aligned. Tap Space to grab.':'Move above a dock box and lower the hook.';
+    $('#crane-grab-label').textContent=held?'RELEASE CARGO':canGrab?'GRAB CARGO':'GRAB / RELEASE';
+    $('#crane-grab').classList.toggle('ready',!!canGrab||held);$('#crane-grab').disabled=false;
     $('#crane-load-bar').style.width=`${s.load*100}%`;
   }
   $('#mission-title').textContent = cargo ? 'CARGO RUN / 06 CONTAINERS' : 'COASTAL CRUISE / 24 PASSENGERS'; $('#difficulty-badge').textContent = s.config.name.toUpperCase(); $('#callsign').textContent = s.spec.callsign.toUpperCase();
   $('#objective').textContent = s.stage === 'loading' ? cargo ? 'Load the ship.' : 'Welcome aboard.' : s.swimmer ? 'Bring them back.' : remaining < 550 ? 'Make your delivery.' : 'Next stop, Northstar.';
   $('#objective-detail').textContent = s.stage === 'loading' ? context.hint + '.' : s.swimmer ? 'S to brake · A / ← to reverse · Stop and hold E to rescue.' : remaining < 550 ? context.hint + '.' : cargo ? 'Keep the cargo safe. Watch for pirates and rough seas.' : 'Look after your passengers and keep an eye on the engines.';
   $('#route-dot').style.left = `${Tide.clamp((ship.x-s.source)/(s.destination-s.source)*100,0,100)}%`; $('#remaining').textContent = `${distance(remaining)} ${ship.x > s.destination ? '← to dock' : 'to dock →'}`;
+  $('#cargo-status').hidden=!cargo;$('#cargo-status').textContent=cargo?(loadingCrane?'Free placement · Balanced stacks survive rough seas.':s.stats.cargoLost?`${s.stats.cargoLost} LOST OVERBOARD · ${s.onboard}/6 OF COMPLETION BONUS`:(Tide.Cargo.risk(s.crane)?'UNBALANCED CARGO · Brake before large waves.':'ALL CARGO ABOARD · Full completion bonus available.')):'';$('#cargo-status').classList.toggle('cargo-warning',cargo&&(s.stats.cargoLost>0||Tide.Cargo.risk(s.crane)));
   $('#manifest-count').textContent = `${s.onboard} / ${s.spec.capacity} ${cargo ? 'CONTAINERS' : 'ABOARD'}`;
   $('#drive-direction').textContent=ship.vx < -1 ? 'ASTERN' : ship.vx > 1 ? 'AHEAD' : 'STOPPED';
   $('#speed-value').textContent = Math.round(Math.abs(ship.vx) * .21); $('#speed-arc').style.strokeDasharray = `${Math.abs(ship.vx)/s.spec.maxSpeed*100} 100`;

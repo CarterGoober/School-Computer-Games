@@ -14,7 +14,7 @@ function traverse(s,x) {
   },15);
   until(s,()=>Math.abs(C.hook(s.crane).x-x)<2&&Math.abs(s.crane.omega)<.025,{},10);
 }
-function loadCargo(s) {
+function loadCargo(s, depart=true) {
   assert(s.crane,'cargo crane required');
   while(s.onboard<6){
     const c=s.crane,box=c.boxes.filter(b=>b.status==='dock').sort((a,b)=>b.y-a.y)[0];
@@ -23,7 +23,7 @@ function loadCargo(s) {
     until(s,()=>C.grabCandidate(c)?.id===box.id,{down:true},5);
     assert(Tide.craneAction(s),'hook grabs a real dock box');
     lift(s);
-    const slot=C.slots(c).find(slot=>!slot.filled&&slot.supported);traverse(s,slot.x);
+    const n=s.onboard,slot={x:c.origin-47+(n%3)*49,y:26+Math.floor(n/3)*31};traverse(s,slot.x);
     until(s,()=>c.boxes[c.held].y<slot.y+13,{down:true},5);
     // Let the winch stop so a released container carries the actual settled velocity.
     for(let i=0;i<45;i++)tick(s);
@@ -31,7 +31,7 @@ function loadCargo(s) {
     until(s,()=>s.onboard===previous+1,{},4);
   }
   assert.equal(s.stage,'loading','player explicitly leaves the crane');
-  tick(s,{interact:true});assert.equal(s.stage,'sailing');
+  until(s,()=>C.ready(s.crane),{},5);if(depart){tick(s,{interact:true});assert.equal(s.stage,'sailing');}
 }
 module.exports={loadCargo,lift,traverse,until};
 
@@ -42,7 +42,7 @@ if(require.main===module){
   lift(pick);for(let i=0;i<65;i++)tick(pick,{left:true});assert(Math.abs(pick.crane.angle)>.08,'trolley acceleration makes the load swing');assert(Math.abs(C.hook(pick.crane).x-pick.crane.x)>4,'load lags behind trolley');const angle=pick.crane.angle;for(let i=0;i<20;i++)tick(pick);assert(Math.abs(pick.crane.angle-angle)>.01,'swing continues after letting go');const peak=Math.abs(pick.crane.angle);for(let i=0;i<600;i++)tick(pick);assert(Math.abs(pick.crane.angle)<Math.max(.02,peak*.15),'swing gradually damps');
   // A high drop in the gap misses the ship and is recovered without resetting loaded progress.
   lift(pick);traverse(pick,pick.source+140);assert(Tide.craneAction(pick));const drop=pick.crane.boxes[b.id];assert.equal(drop.status,'falling');until(pick,()=>pick.crane.recovered>0,{},5);assert.equal(drop.status,'dock');assert.equal(pick.onboard,0);assert(drop.y>=C.geometry.dock);
-  const loaded=Tide.create('cargo','hard');loadCargo(loaded);assert.equal(loaded.onboard,6);assert.equal(loaded.load,1);assert.equal(new Set(loaded.crane.boxes.map(b=>b.slot)).size,6);assert(loaded.crane.boxes.every(b=>b.status==='loaded'));assert.equal(loaded.crane.held,null);const beforeX=loaded.ship.x;for(let i=0;i<120;i++)tick(loaded,{right:true});assert(loaded.ship.x>beforeX+30,'ship controls unlock after loading');assert.equal(Tide.craneAction(loaded),false,'Space cannot unload cargo at sea');
+  const loaded=Tide.create('cargo','hard');loadCargo(loaded);assert.equal(loaded.onboard,6);assert.equal(loaded.load,1);assert(loaded.crane.boxes.every(b=>Number.isFinite(b.x)&&Number.isFinite(b.y)));assert(loaded.crane.boxes.every(b=>b.status==='loaded'));assert.equal(loaded.crane.held,null);const beforeX=loaded.ship.x;for(let i=0;i<120;i++)tick(loaded,{right:true});assert(loaded.ship.x>beforeX+30,'ship controls unlock after loading');assert.equal(Tide.craneAction(loaded),false,'Space cannot unload cargo at sea');
   const cruise=Tide.create('cruise');assert.equal(cruise.crane,null);for(let i=0;i<250;i++)tick(cruise,{interact:true});assert.equal(cruise.stage,'sailing');assert.equal(cruise.onboard,24);
-  console.log('PASS manual crane controls, mooring, physical grabs, pendulum lag/swing/damping, missed-drop recovery, six real placements, explicit departure, and cruise boarding');
+  console.log('PASS manual crane controls, mooring, physical grabs, pendulum lag/swing/damping, missed-drop recovery, six free placements, explicit departure, and cruise boarding');
 }
