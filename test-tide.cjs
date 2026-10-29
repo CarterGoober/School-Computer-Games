@@ -1,13 +1,14 @@
 'use strict';
 const assert = require('node:assert/strict');
 const T = require('./tide-physics.js');
+const {loadCargo}=require('./test-tide-crane.cjs');
 const advance = (s, seconds, controls = {}) => { for (let i=0;i<Math.ceil(seconds*60);i++) T.step(s,typeof controls==='function'?controls(s,i):controls,1/60); };
-function atSea(vessel='cargo',difficulty='easy',seed=42) { const s=T.create(vessel,difficulty,seed);advance(s,5,{interact:true});s.ship.x=1800;s.eventIn=s.waveIn=1e6;return s; }
+function atSea(vessel='cargo',difficulty='easy',seed=42) { const s=T.create(vessel,difficulty,seed);if(s.crane)loadCargo(s);else advance(s,5,{interact:true});s.ship.x=1800;s.eventIn=s.waveIn=1e6;return s; }
 
 // Loading is an actual interaction. Delivery needs a slow approach inside the berth.
 for (const vessel of ['cargo','cruise']) {
   const s=T.create(vessel,'easy',7);advance(s,6,{right:true});assert.equal(s.stage,'loading');assert.equal(s.ship.x,200);assert.equal(s.onboard,0);
-  advance(s,5,{interact:true});assert.equal(s.stage,'sailing');assert.equal(s.onboard,s.spec.capacity);
+  if(s.crane)loadCargo(s);else advance(s,5,{interact:true});assert.equal(s.stage,'sailing');assert.equal(s.onboard,s.spec.capacity);
   advance(s,2,{interact:true});assert.equal(s.unload,0,'cannot deliver at the departure dock');
   s.ship.x=s.destination;s.ship.vx=90;T.step(s,{interact:true});assert.equal(s.unload,0,'cannot unload at speed');
   advance(s,2,{brake:true});advance(s,4,{interact:true});assert.equal(s.stage,'complete');assert(s.score>1000);
@@ -34,7 +35,7 @@ const slow=impact(0),fast=impact(106);assert(slow.stats.damage<fast.stats.damage
 const before=slow.stats.damage;advance(slow,1);assert.equal(slow.stats.damage,before,'a wave damages once, not every frame');
 const sunk=atSea('cargo','hard');sunk.ship.hull=3;sunk.ship.vx=100;T.spawnWave(sunk,true).x=sunk.ship.x;T.step(sunk);assert.equal(sunk.stage,'failed');assert.equal(sunk.ship.hull,0);
 const repaired=atSea('cargo','medium');repaired.ship.hull=45;advance(repaired,3.2,{repair:true});assert.equal(repaired.ship.hull,80);assert.equal(repaired.repairKits,1);repaired.ship.vx=100;advance(repaired,.5,{repair:true,right:true});assert.equal(repaired.repair,0,'cannot repair at speed');
-const protectedHarbor=T.create();advance(protectedHarbor,5,{interact:true});protectedHarbor.ship.x=protectedHarbor.destination;T.spawnWave(protectedHarbor,true).x=protectedHarbor.ship.x;T.step(protectedHarbor);assert.equal(protectedHarbor.ship.hull,100);
+const protectedHarbor=T.create();loadCargo(protectedHarbor);protectedHarbor.ship.x=protectedHarbor.destination;T.spawnWave(protectedHarbor,true).x=protectedHarbor.ship.x;T.step(protectedHarbor);assert.equal(protectedHarbor.ship.hull,100);
 console.log('PASS speed-dependent wave damage, single impacts, sinking, repairs, and sheltered docks');
 
 // A human-like control policy completes every combination using normal mission transitions.
@@ -52,7 +53,7 @@ function pilot(s,frame) {
   return c;
 }
 for(const vessel of ['cargo','cruise'])for(const difficulty of ['easy','medium','hard'])for(const seed of [13,92]){
-  const s=T.create(vessel,difficulty,seed);let maxVertical=0,previousY=0;
+  const s=T.create(vessel,difficulty,seed);if(s.crane)loadCargo(s);let maxVertical=0,previousY=0;
   for(let i=0;i<60*240&&s.stage!=='complete'&&s.stage!=='failed';i++){T.step(s,pilot(s,i),1/60);maxVertical=Math.max(maxVertical,Math.abs(s.ship.y-previousY));previousY=s.ship.y;assert(Number.isFinite(s.ship.y)&&Number.isFinite(s.ship.angle));}
   assert.equal(s.stage,'complete',`${vessel}/${difficulty}/${seed}: ${s.failure} at ${Math.round(s.ship.x)}m, ${Math.round(s.voyageTime)}s`);assert(s.stats.events>0);assert(s.stats.waves>0);assert(maxVertical<7,'buoyancy stays continuous through rough seas');
   if(vessel==='cruise'){assert(s.stats.restarts>0);assert(s.stats.rescues>0);}

@@ -1,5 +1,6 @@
 (function (root) {
   'use strict';
+  const Crane = typeof module !== 'undefined' && module.exports ? require('./tide-crane.js') : root.TideCrane;
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   const difficulties = {
     easy: { name: 'Easy', eventEvery: 23, waveEvery: 26, waveHeight: 36, tsunamiChance: .22, damage: 4, pirateHP: 32, boarding: 4, restartTaps: 8, rescueTime: 50, repairKits: 3 },
@@ -19,7 +20,7 @@
     return {
       vessel, difficulty, spec, config, seed: seed >>> 0, time: 0, voyageTime: 0, stage: 'loading',
       ship: { x: 200, y: 0, vy: 0, angle: 0, angular: 0, vx: 0, hull: 100, pressure: 100, engine: true, restart: 0, gunAngle: 0 },
-      source: 200, destination: spec.destination, load: 0, unload: 0, onboard: 0, repair: 0, repairKits: config.repairKits,
+      source: 200, destination: spec.destination, load: 0, unload: 0, onboard: 0, repair: 0, repairKits: config.repairKits, crane: vessel === 'cargo' ? Crane.create(200) : null,
       eventIn: config.eventEvery * .56, waveIn: config.waveEvery * .65, eventNumber: 0, waves: [], pirates: [], shots: [], effects: [],
       swimmer: null, shotCooldown: 0, spray: false, repairActive: false, notice: null, failure: '', score: 0, nextId: 1,
       stats: { pirates: 0, rescues: 0, restarts: 0, events: 0, waves: 0, tsunamis: 0, shots: 0, damage: 0 }
@@ -100,6 +101,7 @@
   }
   function interaction(s) {
     const slow = Math.abs(s.ship.vx) < 23;
+    if (s.stage === 'loading' && s.crane) return { label: s.onboard === 6 ? 'Leave crane & set sail' : 'Load with the crane', hint: s.onboard === 6 ? 'All six containers secured · press E to sail' : 'WASD to move the hook · Space to grab / release', ready: s.onboard === 6, progress: s.load };
     if (s.stage === 'loading') return { label: s.vessel === 'cargo' ? 'Load cargo' : 'Board passengers', hint: s.vessel === 'cargo' ? 'Hold E to operate the loading crane' : 'Hold E to welcome your passengers', ready: true, progress: s.load };
     if (s.swimmer) {
       const near = Math.abs(s.ship.x - s.swimmer.x) < s.spec.length / 2 + 95;
@@ -112,6 +114,15 @@
     s.stage = 'complete'; s.ship.vx = 0; s.spray = false;
     s.score = Math.round(1000 + s.ship.hull * 10 + s.stats.pirates * 150 + s.stats.rescues * 200 + Math.max(0, 400 - s.voyageTime * 2) + { easy: 0, medium: 400, hard: 900 }[s.difficulty]);
   }
+  function craneAction(s) {
+    if (s.stage !== 'loading' || !s.crane) return false;
+    if (s.onboard === 6) { notify(s, 'ALL CARGO SECURED · Press E to leave the crane and sail.', 'good'); return false; }
+    const result = Crane.action(s.crane); notify(s, result.message, result.changed ? 'good' : 'info'); return result.changed;
+  }
+  function depart(s) {
+    if (s.stage !== 'loading' || !s.crane || Crane.loaded(s.crane) !== 6 || s.crane.held !== null) return false;
+    s.stage = 'sailing'; notify(s, 'LINES OFF · Northstar Pier is to the right. Hold D or → to sail.', 'good'); return true;
+  }
   function step(s, input = {}, dt = 1 / 60) {
     if (s.stage === 'complete' || s.stage === 'failed') return;
     dt = clamp(dt, 0, 1 / 30); s.time += dt;
@@ -120,6 +131,16 @@
     for (const e of s.effects) e.age += dt;
     s.effects = s.effects.filter(e => e.age < 1.1);
     s.spray = false; s.repairActive = false;
+    if (s.stage === 'loading' && s.crane) {
+      const previous = s.onboard, recovered = s.crane.recovered;
+      Crane.step(s.crane, input, dt); s.onboard = Crane.loaded(s.crane); s.load = s.onboard / s.spec.capacity;
+      if (s.crane.recovered > recovered) notify(s, 'DOCK CREW RECOVERED THE BOX · Pick it up and try again.', 'warning');
+      if (s.onboard > previous) notify(s, s.onboard === 6 ? 'ALL CARGO SECURED · Press E to leave the crane and sail.' : `CONTAINER SECURED · ${s.onboard} / 6 loaded.`, 'good');
+      // Mooring holds the deck steady while cargo is being handled. Ship controls unlock on departure.
+      ship.x = s.source; ship.vx = ship.y = ship.vy = ship.angle = ship.angular = 0;
+      if (s.onboard === 6 && input.interact) depart(s);
+      return;
+    }
     if (s.stage === 'loading') {
       if (input.interact) {
         s.load = clamp(s.load + dt / s.spec.loadTime, 0, 1);
@@ -215,7 +236,7 @@
     }
     s.shots = s.shots.filter(shot => shot.age < 1.5);
   }
-  const api = { clamp, difficulties, vessels, create, step, sea, interaction, triggerIncident, spawnWave, tapRestart, fire, gunPosition };
+  const api = { clamp, difficulties, vessels, create, step, sea, interaction, triggerIncident, spawnWave, tapRestart, fire, gunPosition, Crane, craneAction, depart };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Tide = api;
 })(typeof window !== 'undefined' ? window : globalThis);

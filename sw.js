@@ -1,6 +1,6 @@
 'use strict';
-const CACHE='apex-circuit-v8-tideline';
-const ASSETS=['./','./index.html','./hub.css','./hub.js','./tide.html','./tide.css','./tide.js','./tide-physics.js','./tide-art.js','./tide-cover.svg','./apex.html','./drift.html','./drift.css','./drift.js','./drift-physics.js','./world-renderer.js','./urban-scene.js','./streets-cover.svg','./style.css','./physics.js','./app.js','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
+const CACHE='apex-circuit-v9-crane';
+const ASSETS=['./','./index.html','./hub.css','./hub.js','./tide.html','./tide.css','./tide.js','./tide-crane.js','./tide-physics.js','./tide-art.js','./tide-cover.svg','./apex.html','./drift.html','./drift.css','./drift.js','./drift-physics.js','./world-renderer.js','./urban-scene.js','./streets-cover.svg','./style.css','./physics.js','./app.js','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('apex-circuit-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()).then(()=>self.clients.matchAll()).then(clients=>clients.forEach(client=>client.postMessage('OFFLINE_READY'))))});
 self.addEventListener('message',event=>{if(event.data==='CACHE_STATUS')event.waitUntil(caches.open(CACHE).then(async cache=>{const responses=await Promise.all(ASSETS.map(asset=>cache.match(asset)));if(responses.every(Boolean)&&event.source)event.source.postMessage('OFFLINE_READY')}))});

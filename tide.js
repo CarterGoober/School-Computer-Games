@@ -11,6 +11,7 @@ const pad = n => String(n).padStart(2, '0');
 const clock = t => `${pad(Math.floor(t / 60))}:${pad(Math.floor(t % 60))}`;
 const distance = n => n >= 1000 ? `${(n/1000).toFixed(1)} km` : `${Math.round(n)} m`;
 const countLabel = (n, noun) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+const craneLoading = () => voyage.stage === 'loading' && !!voyage.crane;
 function resetMenuSea() { menuSea = Tide.create(vessel, difficulty, 42); menuSea.load = 1; menuSea.onboard = menuSea.spec.capacity; }
 resetMenuSea();
 function clearInputs() { keys.clear(); holds.clear(); mouseDown = false; document.querySelectorAll('.pressed').forEach(el => el.classList.remove('pressed')); }
@@ -19,6 +20,7 @@ function setMode(next) {
   $('#menu').hidden = next !== 'menu'; $('#preview-label').hidden = next !== 'menu'; $('#hud').hidden = next === 'menu';
   $('#pause-panel').hidden = next !== 'paused'; $('#result-panel').hidden = next !== 'result'; $('#pause').hidden = next === 'menu';
   document.body.classList.toggle('playing', next === 'playing');
+  document.body.classList.toggle('crane-mode', next !== 'menu' && craneLoading());
   if (engineGain && next !== 'playing') engineGain.gain.setTargetAtTime(0, audio.currentTime, .08);
 }
 function start() { voyage = Tide.create(vessel, difficulty); aimPoint = null; setMode('playing'); hudTimer = 0; updateHud(); canvas.focus(); if (audio && sound) audio.resume().catch(() => {}); }
@@ -42,21 +44,25 @@ $('#depart').onclick = start; $('#retry').onclick = start; $('#again').onclick =
 document.querySelectorAll('[data-vessel]').forEach(button => button.onclick = () => {
   vessel = button.dataset.vessel;
   document.querySelectorAll('[data-vessel]').forEach(b => { b.classList.toggle('selected', b === button); b.setAttribute('aria-pressed', String(b === button)); });
-  $('#vessel-brief').textContent = vessel === 'cargo' ? 'Load six containers. Deliver to Northstar Pier. Keep pirates off your ship with deck guns and water cannons.' : 'Welcome 24 passengers. Keep the engines running, rescue anyone overboard, and bring everybody home.';
+  $('#vessel-brief').textContent = vessel === 'cargo' ? 'Operate the swinging crane to load six containers. Deliver them to Northstar Pier and keep pirates off your ship.' : 'Welcome 24 passengers. Keep the engines running, rescue anyone overboard, and bring everybody home.';
   $('#preview-name').textContent = Tide.vessels[vessel].callsign; $('#preview-spec').textContent = vessel === 'cargo' ? '6 containers / 5.4 km crossing' : '24 passengers / 5.9 km crossing'; resetMenuSea();
 });
 const difficultyBrief = { easy: 'Room to learn. Occasional trouble, gentler waves, three repair kits.', medium: 'Stay sharp. More incidents, stronger swells, two repair kits.', hard: 'A captain’s test. Frequent trouble, powerful tsunamis, two repair kits.' };
 document.querySelectorAll('[data-difficulty]').forEach(button => button.onclick = () => { difficulty = button.dataset.difficulty; document.querySelectorAll('[data-difficulty]').forEach(b => { b.classList.toggle('selected', b === button); b.setAttribute('aria-pressed', String(b === button)); }); $('#difficulty-brief').textContent = difficultyBrief[difficulty]; resetMenuSea(); });
 $('#instructions').onclick = () => $('#handbook').showModal();
 for (const id of ['close-handbook', 'handbook-done']) $('#' + id).onclick = () => $('#handbook').close();
-function input() { return { right: holds.has('right') || keys.has('d') || keys.has('w') || keys.has('ArrowRight') || keys.has('ArrowUp'), left: holds.has('left') || keys.has('a') || keys.has('ArrowLeft'), brake: holds.has('brake') || keys.has('s') || keys.has('ArrowDown'), interact: holds.has('interact') || keys.has('e'), cannon: holds.has('cannon') || keys.has('f'), repair: holds.has('repair') || keys.has('r'), fire: mouseDown, aim: aimPoint ? art.worldFromScreen(aimPoint.x, aimPoint.y) : null }; }
+function input() {
+  const up = holds.has('up') || keys.has('w') || keys.has('ArrowUp'), down = holds.has('down') || keys.has('s') || keys.has('ArrowDown');
+  return { right: holds.has('right') || keys.has('d') || keys.has('ArrowRight') || (!craneLoading() && up), left: holds.has('left') || keys.has('a') || keys.has('ArrowLeft'), up, down, brake: holds.has('brake') || (!craneLoading() && down), interact: holds.has('interact') || keys.has('e'), cannon: holds.has('cannon') || keys.has('f'), repair: holds.has('repair') || keys.has('r'), fire: mouseDown, aim: aimPoint ? art.worldFromScreen(aimPoint.x, aimPoint.y) : null };
+}
 addEventListener('keydown', e => {
   if ($('#handbook').open) return;
   const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   if (['playing','paused'].includes(mode) && [' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key)) e.preventDefault();
   if (!e.repeat && (key === 'Escape' || key === 'p')) { if (mode === 'playing') pause(); else if (mode === 'paused') resume(); return; }
   if (mode !== 'playing') return;
-  if (key === ' ' && !e.repeat) { Tide.tapRestart(voyage); updateHud(); }
+  if (key === 'e' && craneLoading() && Tide.depart(voyage)) { clearInputs(); updateHud(); return; }
+  if (key === ' ' && !e.repeat) { if(craneLoading()) Tide.craneAction(voyage); else Tide.tapRestart(voyage); updateHud(); }
   keys.add(key);
 });
 addEventListener('keyup', e => keys.delete(e.key.length === 1 ? e.key.toLowerCase() : e.key));
@@ -72,6 +78,8 @@ function bindHold(button, action) {
 }
 document.querySelectorAll('[data-hold]').forEach(button => bindHold(button, button.dataset.hold)); bindHold($('#context-action'), 'interact'); bindHold($('#repair-button'), 'repair');
 $('#restart-engine').onclick = () => { if (mode === 'playing') { Tide.tapRestart(voyage); updateHud(); } };
+$('#crane-grab').onclick = () => { if (mode === 'playing' && craneLoading()) { Tide.craneAction(voyage); updateHud(); } };
+$('#context-action').onclick = () => { if (mode === 'playing' && craneLoading() && Tide.depart(voyage)) { clearInputs(); updateHud(); } };
 $('#sound').onclick = () => {
   try {
     if (!audio) {
@@ -83,6 +91,16 @@ $('#sound').onclick = () => {
 };
 function updateHud() {
   const s = voyage, ship = s.ship, cargo = s.vessel === 'cargo', context = Tide.interaction(s), remaining = Math.abs(s.destination - ship.x);
+  const loadingCrane = craneLoading(); document.body.classList.toggle('crane-mode',loadingCrane); $('#crane-panel').hidden = !loadingCrane;
+  if(loadingCrane){
+    const c=s.crane,held=c.held!==null,canGrab=Tide.Crane.grabCandidate(c),done=s.onboard===6;
+    $('#crane-count').textContent=`${s.onboard} / 6 SECURED`;
+    $('#crane-swing').textContent=`${Math.round(Math.abs(c.angle)*180/Math.PI)}° SWING`;
+    $('#crane-state').textContent=done?'All cargo aboard. Ready to sail.':c.blocked?'Lift higher to clear the stack.':held?'Cargo attached. Lift, move, lower, release.':canGrab?'Hook aligned. Tap Space to grab.':'Move above a dock box and lower the hook.';
+    $('#crane-grab-label').textContent=done?'ALL LOADED':held?'RELEASE CARGO':canGrab?'GRAB CARGO':'GRAB / RELEASE';
+    $('#crane-grab').classList.toggle('ready',!!canGrab||held);$('#crane-grab').disabled=done;
+    $('#crane-load-bar').style.width=`${s.load*100}%`;
+  }
   $('#mission-title').textContent = cargo ? 'CARGO RUN / 06 CONTAINERS' : 'COASTAL CRUISE / 24 PASSENGERS'; $('#difficulty-badge').textContent = s.config.name.toUpperCase(); $('#callsign').textContent = s.spec.callsign.toUpperCase();
   $('#objective').textContent = s.stage === 'loading' ? cargo ? 'Load the ship.' : 'Welcome aboard.' : s.swimmer ? 'Bring them back.' : remaining < 550 ? 'Make your delivery.' : 'Next stop, Northstar.';
   $('#objective-detail').textContent = s.stage === 'loading' ? context.hint + '.' : s.swimmer ? 'Return to the life ring, stop, and hold E.' : remaining < 550 ? context.hint + '.' : cargo ? 'Keep the cargo safe. Watch for pirates and rough seas.' : 'Look after your passengers and keep an eye on the engines.';
@@ -97,7 +115,7 @@ function updateHud() {
   $('#repair-progress').style.width = `${s.repair*100}%`; $('#repair-button').disabled = s.repairKits === 0; $('#voyage-clock').textContent = clock(s.voyageTime);
   $('#role-control').textContent = cargo ? 'AIM + CLICK · DECK GUN' : 'TAP SPACE · ENGINE RESTART';
   $('#touch-cannon').hidden = !cargo; $('#restart-engine').hidden = cargo || ship.engine;
-  $('#context-action').hidden = !(s.stage === 'loading' || s.swimmer || remaining < 550); $('#context-action').disabled = !context.ready;
+  $('#context-action').hidden = loadingCrane ? s.onboard !== 6 : !(s.stage === 'loading' || s.swimmer || remaining < 550); $('#context-action').disabled = !context.ready;
   $('#action-title').textContent = context.label; $('#action-hint').textContent = context.hint; $('#action-percent').textContent = `${Math.floor(context.progress*100)}%`; $('#action-progress').style.width = `${context.progress*100}%`;
   let alert = null;
   const board = Math.max(0,...s.pirates.map(p => p.boarding)), wave = s.waves.find(w => !w.hit && w.x > ship.x-w.width && w.x-ship.x < 1300), pirates = s.pirates.filter(p => p.hp > 0);
@@ -114,13 +132,14 @@ function updateHud() {
 addEventListener('resize', () => art.resize());
 function frame(now) {
   const elapsed = Math.min((now-last)/1000,.12); last = now;
-  if (mode === 'menu' && !$('#handbook').open) Tide.step(menuSea, {}, Math.min(elapsed,1/30));
+  if (mode === 'menu' && !$('#handbook').open) { menuSea.time += elapsed; menuSea.ship.y = Tide.sea(menuSea,menuSea.source)*.4; }
   if (mode === 'playing') {
     accumulator += elapsed;
     while (accumulator >= 1/60) {
       const controls = input();
       if (controls.aim) { const origin = Tide.gunPosition(voyage); voyage.ship.gunAngle = Math.atan2(controls.aim.y-origin.y,controls.aim.x-origin.x); }
-      Tide.step(voyage, controls, 1/60); accumulator -= 1/60;
+      const wasCrane=craneLoading();Tide.step(voyage, controls, 1/60); accumulator -= 1/60;
+      if(wasCrane&&!craneLoading()){clearInputs();aimPoint=null;updateHud();}
       if (voyage.stage === 'complete' || voyage.stage === 'failed') { finish(); break; }
     }
     hudTimer -= elapsed; if (hudTimer <= 0) { updateHud(); hudTimer = .08; }

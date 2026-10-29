@@ -4,7 +4,7 @@
   const rand = n => { const v = Math.sin(n * 127.1 + 91.7) * 43758.5453; return v - Math.floor(v); };
   window.createTideRenderer = function (canvas) {
     const ctx = canvas.getContext('2d', { alpha: false });
-    let width = 1, height = 1, dpr = 1, zoom = 1, center = 0, waterline = 0, cameraX = 0;
+    let width = 1, height = 1, dpr = 1, zoom = 1, center = 0, waterline = 0, cameraX = 0, craneView = false, preview = false;
     const X = x => center + (x - cameraX) * zoom, Y = y => waterline - y * zoom;
     function resize() { width = innerWidth; height = innerHeight; dpr = Math.min(devicePixelRatio || 1, 1.5); canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr); }
     function path(points, fill, stroke, lineWidth = 1) { ctx.beginPath(); points.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth; ctx.stroke(); } }
@@ -78,27 +78,67 @@
       ctx.save();ctx.translate(xx,yy);ctx.scale(zoom,zoom);
       const side=destination?1:-1;
       // Timber quay, rubber fenders, bollards, and a warehouse behind the berth.
-      rect(-310,1,620,17,'#718e88');rect(-310,1,620,4,'#b3b79c');
-      for(let i=-300;i<=300;i+=45){rect(i,18,9,57,'#456e70');line(i+1,24,i+7,70,'#75938b',1);circle(i+4,6,6,'#304e53');rect(i+1,-7,6,10,'#344e50');}
-      for(let i=-310;i<310;i+=20)line(i,2,i,14,'#385e612f');
+      const quayEnd=!destination&&s.crane?412:310;
+      rect(-310,1,quayEnd+310,17,'#718e88');rect(-310,1,quayEnd+310,4,'#b3b79c');
+      for(let i=-300;i<=quayEnd;i+=45){rect(i,18,9,57,'#456e70');line(i+1,24,i+7,70,'#75938b',1);circle(i+4,6,6,'#304e53');rect(i+1,-7,6,10,'#344e50');}
+      for(let i=-310;i<quayEnd;i+=20)line(i,2,i,14,'#385e612f');
       const bx=side<0?-310:190;
       rect(bx,-90,115,90,'#d0d1bd');path([[bx-10,-90],[bx+57,-123],[bx+125,-90]],'#718f8a');rect(bx+30,-42,54,43,'#8ba29a');
       for(let i=0;i<5;i++)line(bx+32,-37+i*7,bx+82,-37+i*7,'#aabaae');for(let i=0;i<3;i++)rect(bx+15+i*35,-76,18,17,'#769393',2);
       rect(bx+17,-56,78,12,'#f1e4c8');text(destination?'NORTHSTAR':'WESTHAVEN',bx+56,-47,8,'#537471','center');
+      if(!destination&&s.crane){
+        const top=-Tide.Crane.geometry.boom;
+        rect(383,top-20,15,-top+21,'#a99864');rect(386,top-18,4,-top+19,'#e2ca86');
+        rect(-85,top-16,486,11,'#c6b37b');line(390,top-55,390,top-17,'#577978',3);line(-80,top-15,390,top-55,'#6b8b80',2);
+        for(let i=-77;i<380;i+=28)path([[i,top-15],[i+14,top-5],[i+28,top-15]],null,'#718a76',1);
+        rect(363,top+7,20,27,'#91a294',2);rect(366,top+10,14,12,'#547c81',1);
+        rect(192,-6,152,6,'#cfba82');text('CARGO PICKUP',265,34,9,'#c5e4cf','center');
+      }else{
       const cx=destination?240:-250;
       rect(cx-7,-178,14,177,'#bdaa72');line(cx-4,-169,cx+4,-5,'#f0db99',2);rect(cx-18,-180,260,10,'#c5b57c');
       line(cx,-185,cx+175,-175,'#597e7b',2);line(cx,-185,cx,-215,'#597e7b',3);line(cx,-215,cx+175,-175,'#597e7b');
       for(let i=0;i<7;i++)path([[cx+15+i*28,-179],[cx+28+i*28,-170],[cx+42+i*28,-179]],null,'#7c8d76',1);
       line(cx-21,-178,cx-21,-122,'#577774',1);rect(cx-33,-122,23,18,'#9ca799',2);
       let hookX=cx+135,hookY=-54;
-      if(s.stage==='loading'&&!destination&&s.vessel==='cargo'&&s.load>0&&s.load<1){const f=s.load*6%1;hookX=-185+Math.min(1,f*1.6)*215;hookY=-108+Math.max(0,f-.6)*140;}
       line(hookX,-170,hookX,hookY,'#516f6b',1);line(hookX-3,hookY,hookX+3,hookY+4,'#263f46',2);
-      if(s.vessel==='cargo'&&((s.stage==='loading'&&s.load>0&&s.load<1&&!destination)||(destination&&s.unload>0&&s.unload<1)))container(hookX-23,hookY+4,'#d99d54');
+      if(s.vessel==='cargo'&&destination&&s.unload>0&&s.unload<1)container(hookX-23,hookY+4,'#d99d54');
       for(let i=0;i<3;i++)container((destination?-290:-185)+i*47,-33,['#ac7860','#648f89','#bea46b'][i]);
-      const signX=destination?-250:250;rect(signX-2,-102,4,103,'#75928a');rect(signX-50,-102,100,25,'#f0ebd4',2);text(destination?'NORTHSTAR PIER':'WESTHAVEN DOCK',signX,-87,8,'#3a6668','center');
+      }
+      const signX=destination?-250:s.crane?420:250;rect(signX-2,-102,4,103,'#75928a');rect(signX-50,-102,100,25,'#f0ebd4',2);text(destination?'NORTHSTAR PIER':'WESTHAVEN DOCK',signX,-87,8,'#3a6668','center');
       if(s.vessel==='cruise')for(let i=0;i<6;i++){const moving=s.stage==='loading'&&!destination?s.load*6%1:0;person(-135+i*20+moving*15,-17,['#ba7959','#6c9c93','#e2b66c'][i%3],.85);}
       ctx.restore();
       if(destination&&s.stage==='sailing'&&Math.abs(s.ship.x-world)<750){ctx.save();ctx.setLineDash([6,6]);ctx.strokeStyle='#e5edbbaa';ctx.lineWidth=2;ctx.strokeRect(X(world-115),waterline+42*zoom,230*zoom,19*zoom);ctx.restore();text('SLOW / HOLD E TO DOCK',X(world),waterline+86*zoom,9*zoom,'#b6ded2','center');}
+    }
+    function crane(s) {
+      const c=s.crane;if(!c||X(c.origin)>width+650*zoom||X(c.origin)<-650*zoom)return;
+      const h=Tide.Crane.hook(c),candidate=Tide.Crane.grabCandidate(c),bay=Tide.Crane.target(c,h.x);
+      if(craneView){
+        for(const slot of Tide.Crane.slots(c)){
+          if(slot.filled||!slot.supported)continue;
+          const active=c.held!==null&&bay?.id===slot.id;
+          rect(X(slot.x-23),Y(slot.y+31),46*zoom,31*zoom,active?'#efd18b35':'#f1e4ae1c');
+          ctx.save();ctx.setLineDash([4,4]);ctx.lineWidth=active?2:1.3;ctx.strokeStyle=active?'#f3d486':'#eee0abbb';ctx.strokeRect(X(slot.x-23),Y(slot.y+31),46*zoom,31*zoom);ctx.restore();
+          text(String(slot.id+1),X(slot.x),Y(slot.y+12),10*zoom,active?'#ffe6a5':'#b9dcc2','center');
+        }
+        text('LOAD INTO THE MARKED BAYS',X(s.source+1),Y(0)+62*zoom,9*zoom,'#c0e4cd','center');
+      }
+      for(const b of c.boxes){
+        if(b.status==='loaded')continue;
+        ctx.save();ctx.translate(X(b.x),Y(b.y+31));ctx.rotate(-b.angle);ctx.scale(zoom,zoom);container(-23,0,b.color);
+        text(String(b.id+1),-16,23,8,'#f7e8c9');
+        if(craneView&&candidate?.id===b.id){ctx.strokeStyle='#ffe7a1';ctx.lineWidth=2;ctx.strokeRect(-25,-2,50,35);}
+        ctx.restore();
+      }
+      const tx=X(c.x),ty=Y(Tide.Crane.geometry.boom),hx=X(h.x),hy=Y(h.y);
+      rect(tx-13*zoom,ty-8*zoom,26*zoom,14*zoom,'#365e64',2*zoom);circle(tx-8*zoom,ty-9*zoom,4*zoom,'#26494f');circle(tx+8*zoom,ty-9*zoom,4*zoom,'#26494f');
+      line(tx,ty+4*zoom,hx,hy,'#2e555b',2*zoom);line(tx+2*zoom,ty+4*zoom,hx+2*zoom,hy,'#c1b88c',.8*zoom);
+      rect(hx-4*zoom,hy-5*zoom,8*zoom,8*zoom,c.held!==null?'#d1a75b':candidate?'#f3d787':'#dfc48c',2*zoom);
+      if(c.held!==null){const b=c.boxes[c.held];line(hx,hy,X(b.x-15),Y(b.y+31),'#d7c69b',1.2*zoom);line(hx,hy,X(b.x+15),Y(b.y+31),'#d7c69b',1.2*zoom);}
+      else{ctx.strokeStyle='#e1bd72';ctx.lineWidth=2.2*zoom;ctx.beginPath();ctx.arc(hx+2*zoom,hy+5*zoom,4*zoom,0,Math.PI*1.4);ctx.stroke();}
+      if(craneView){
+        const label=c.blocked?'LIFT HIGHER':c.held!==null?'SPACE · RELEASE':candidate?'SPACE · GRAB':'W / S · HOIST';
+        rect(hx-47,hy-31,94,19,candidate?'#e6cc90ee':'#f3efdfeb',3);text(label,hx,hy-18,8,'#365d5c','center');
+      }
     }
     function ship(s) {
       const x=X(s.ship.x),y=Y(s.ship.y),v=s.vessel;
@@ -112,7 +152,10 @@
         for(let i=0;i<4;i++){rect(-126+i*12,-93,9,13,'#567e84',1);line(-125+i*12,-92,-121+i*12,-82,'#c6e2d066',1);}
         rect(-135,-57,15,25,'#77908c',1);circle(-123,-43,1,'#e7d9b5');rect(-94,-66,9,14,'#67858a');rect(-115,-121,14,20,'#45626c',1);rect(-115,-118,14,6,'#c57553');
         rect(-88,-131,3,30,'#6c8686');line(-104,-119,-70,-119,'#5c7d7d');line(-87,-132,-87,-146,'#446a73');
-        for(let i=0;i<Math.max(0,Math.round(s.onboard)-Math.floor(s.unload*6));i++)container(-70+(i%3)*49,-57-Math.floor(i/3)*33,['#d5a45c','#728f89','#bc785f','#7a9a9c','#c5b17b','#ba7c63'][i]);
+        if(s.crane&&!preview){
+          const boxes=s.crane.boxes.filter(b=>b.status==='loaded').sort((a,b)=>a.slot-b.slot);
+          for(const b of boxes.slice(0,Math.max(0,boxes.length-Math.floor(s.unload*6))))container(-70+(b.slot%3)*49,-57-Math.floor(b.slot/3)*33,b.color);
+        }else for(let i=0;i<Math.max(0,Math.round(s.onboard)-Math.floor(s.unload*6));i++)container(-70+(i%3)*49,-57-Math.floor(i/3)*33,Tide.Crane.colors[i]);
         // Deck gun rotates toward the cursor; ammunition is unlimited.
         ellipse(98,-31,14,5,'#a7b5a5');ctx.save();ctx.translate(98,-37);ctx.rotate(-s.ship.gunAngle);rect(0,-3,25,6,'#4c6a6d',2);rect(20,-4,8,8,'#334f56',2);ctx.restore();circle(98,-37,7,'#587675');
         for(let i=0;i<7;i++){circle(-140+i*43,-15,7,'#1d3541');circle(-140+i*43,-15,3,'#47636a');}
@@ -169,11 +212,13 @@
       if(s.vessel==='cargo'&&s.stage==='sailing'&&aim){const x=X(aim.x),y=Y(aim.y);ctx.strokeStyle='#f9edd4b0';ctx.lineWidth=1;ctx.beginPath();ctx.arc(x,y,10,0,TAU);ctx.stroke();line(x-16,y,x-6,y,'#f9edd4');line(x+6,y,x+16,y,'#f9edd4');line(x,y-16,x,y-6,'#f9edd4');line(x,y+6,x,y+16,'#f9edd4');}
     }
     function draw(s,mode='playing',aim=null) {
-      ctx.setTransform(dpr,0,0,dpr,0,0);zoom=Tide.clamp(Math.min(width/1200,height/750),.57,1.3);center=width*(mode==='menu'&&width>560?.73:.49);waterline=height*(width<560?.49:height<500?.57:.58);cameraX=s.ship.x;
+      ctx.setTransform(dpr,0,0,dpr,0,0);preview=mode==='menu';craneView=!preview&&s.stage==='loading'&&!!s.crane;
+      zoom=Tide.clamp(Math.min(width/1200,height/750),.57,1.3);center=width*(mode==='menu'&&width>560?.73:.49);waterline=height*(width<560?.49:height<500?.57:.58);cameraX=s.ship.x;
+      if(craneView){zoom=Math.min(zoom,(width-32)/720);cameraX=s.source+110;center=width*.5;waterline=height*(height<500?.62:width<560?.53:.64);}
       scenery(s);ocean(s);harbor(s,false);harbor(s,true);
       // Navigation buoys are fixed to the route, making forward and reverse motion legible.
       const first=Math.floor((cameraX-center/zoom)/650);for(let i=first;i<first+Math.ceil(width/zoom/650)+2;i++){const bx=650*i+510;if(bx<650||bx>s.destination-450)continue;const xx=X(bx),yy=Y(Tide.sea(s,bx));path([[xx-6*zoom,yy],[xx+6*zoom,yy],[xx+4*zoom,yy-10*zoom],[xx-4*zoom,yy-10*zoom]],'#d69962');line(xx,yy-10*zoom,xx,yy-30*zoom,'#e5c491',2*zoom);circle(xx,yy-31*zoom,2*zoom,'#f5df9a');}
-      for(const p of s.pirates)pirate(s,p);ship(s);ocean(s,true);swimmer(s);effects(s,aim);
+      for(const p of s.pirates)pirate(s,p);ship(s);crane(s);ocean(s,true);swimmer(s);effects(s,aim);
       const storm=s.waves.some(w=>w.tsunami&&Math.abs(w.x-s.ship.x)<500);
       if(storm){rect(0,0,width,height,'#355e700d');for(let i=0;i<35;i++){const x=(rand(i+60)*width+s.time*90)%width,y=(rand(i+160)*height+s.time*210)%height;line(x,y,x-4,y+11,'#e0f1ed33',1);}}
     }
