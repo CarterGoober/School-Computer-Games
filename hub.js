@@ -6,3 +6,5 @@ addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredPr
 installButton.onclick=async()=>{if(!deferredPrompt)return;await deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installButton.hidden=true};
 addEventListener('appinstalled',()=>{installButton.hidden=true});
 if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('message',event=>{if(event.data==='OFFLINE_READY')statusElement.textContent='OFFLINE READY'});navigator.serviceWorker.register('./sw.js').then(async()=>{const registration=await navigator.serviceWorker.ready;const worker=registration.active||navigator.serviceWorker.controller;if(worker)worker.postMessage('CACHE_STATUS')}).catch(()=>{statusElement.textContent='ONLINE ONLY'})}else statusElement.textContent='ONLINE ONLY';
+
+function updatePoints(){document.querySelectorAll('[data-points]').forEach(el=>{const game=el.dataset.points;el.textContent=`${Progression.read(game).balance.toLocaleString()} ${GarageCatalog.games[game].currency.toUpperCase()} / DAILY TASKS + UNLOCKS`;});}updatePoints();addEventListener('pageshow',updatePoints);addEventListener('storage',updatePoints);

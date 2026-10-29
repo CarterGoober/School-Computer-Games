@@ -3,12 +3,14 @@
 'use strict';
 const R=typeof module!=='undefined'&&module.exports?require('./physics.js'):root.Racer;
 const {nearest,clamp,formatTime}=R;
+const Catalog=typeof module!=='undefined'&&module.exports?require('./garage-catalog.js'):root.GarageCatalog;
 const vehicles=[
  {id:'coupe',name:'Sunset Coupe',kind:'car',color:['#cb7340','#b76036','#edaa69'],accel:16,max:46,grip:5.3,turn:.058,mass:1},
  {id:'truck',name:'Trail Pickup',kind:'truck',color:['#729b8b','#547a70','#9bbba3'],accel:13,max:39,grip:4.3,turn:.052,mass:1.4},
  {id:'train',name:'Little Locomotive',kind:'train',color:['#b34d3f','#823d35','#d57958'],accel:10,max:33,grip:3.4,turn:.046,mass:2},
  {id:'sf90',name:'Ferrari SF90 · tribute',kind:'supercar',color:['#c43832','#982e29','#ee5d43'],accel:22,max:58,grip:6,turn:.06,mass:.9}
 ];
+vehicles.push(...Catalog.newVehicles);
 const definitions=[
  {name:'Cloverleaf 8',width:15,theme:'suburb',district:'figure8',points:[[-100,0,0],[-86,0,-52],[-50,0,-52],[0,0,0],[50,0,52],[86,0,52],[100,0,0],[86,0,-52],[50,3,-52],[0,7,0],[-50,3,52],[-86,0,52]],jumps:[.12],obstacles:[.38,.67]},
  {name:'Maplewood Loop',width:14,theme:'suburb',district:'neighborhood',points:[[0,0,0],[0,0,90],[45,0,135],[125,0,135],[180,0,80],[165,0,15],[110,0,-40],[35,0,-50]],jumps:[.1],obstacles:[.34,.68]},

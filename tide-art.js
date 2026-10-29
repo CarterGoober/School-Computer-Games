@@ -71,7 +71,7 @@
       if(foreground)for(const w of s.waves){const wx=X(w.x);if(wx< -200||wx>width+200)continue;const wy=Y(Tide.sea(s,w.x));ctx.strokeStyle='#e8f4dfc0';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(wx-w.width*zoom*.55,wy+28*zoom);ctx.quadraticCurveTo(wx,wy-11*zoom,wx+w.width*zoom*.42,wy+18*zoom);ctx.stroke();for(let i=0;i<10;i++){const spread=(rand(i+w.id)*2-1)*w.width*.7;circle(wx+spread*zoom,wy+(rand(i+5)*20-8)*zoom,1.1*zoom,'#edf8e8b0');}}
     }
     function container(x,y,color) { rect(x,y,46,31,color,1);rect(x+1,y+2,44,3,'#ffffff22');for(let i=0;i<7;i++)line(x+4+i*6,y+5,x+4+i*6,y+28,'#142f3b28');rect(x+33,y+8,9,4,'#ecdfbe99');rect(x+3,y+3,2,25,'#122b3320'); }
-    function person(x,y,color='#e1ad65',scale=1) { ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);circle(0,-15,3,'#d6b38f');line(0,-11,0,-4,color,5);line(-1,-4,-3,1,'#345b66',2);line(1,-4,4,1,'#345b66',2);ctx.restore(); }
+    function person(x,y,color='#e1ad65',scale=1,phase=0) { ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);circle(0,-15,3,'#d6b38f');line(0,-11,0,-4,color,5);const stride=Math.sin(phase)*3.5;line(-1,-4,-3+stride,1,'#345b66',2);line(1,-4,4-stride,1,'#345b66',2);line(0,-10,-4-stride,-5,color,2);line(0,-10,4+stride,-5,color,2);ctx.restore(); }
     function harbor(s,destination) {
       const world=destination?s.destination:s.source,xx=X(world),yy=waterline;
       if(xx < -650*zoom || xx>width+650*zoom)return;
@@ -105,9 +105,23 @@
       for(let i=0;i<3;i++)container((destination?-290:-185)+i*47,-33,['#ac7860','#648f89','#bea46b'][i]);
       }
       const signX=destination?-250:s.crane?420:250;rect(signX-2,-102,4,103,'#75928a');rect(signX-50,-102,100,25,'#f0ebd4',2);text(destination?'NORTHSTAR PIER':'WESTHAVEN DOCK',signX,-87,8,'#3a6668','center');
-      if(s.vessel==='cruise')for(let i=0;i<6;i++){const moving=s.stage==='loading'&&!destination?s.load*6%1:0;person(-135+i*20+moving*15,-17,['#ba7959','#6c9c93','#e2b66c'][i%3],.85);}
+      if(s.vessel==='cruise'&&destination)for(let i=0;i<6;i++)person(-135+i*20,-17,['#ba7959','#6c9c93','#e2b66c'][i%3],.85);
       ctx.restore();
       if(destination&&s.stage==='sailing'&&Math.abs(s.ship.x-world)<750){ctx.save();ctx.setLineDash([6,6]);ctx.strokeStyle='#e5edbbaa';ctx.lineWidth=2;ctx.strokeRect(X(world-115),waterline+42*zoom,230*zoom,19*zoom);ctx.restore();text('SLOW / HOLD E TO DOCK',X(world),waterline+86*zoom,9*zoom,'#b6ded2','center');}
+    }
+    function boarding(s){
+      if(preview||s.vessel!=='cruise'||s.stage!=='loading')return;
+      ctx.save();ctx.translate(X(s.source),Y(0));ctx.scale(zoom,zoom);
+      rect(-145,-64,16,23,'#365f68',2);rect(-142,-61,10,18,'#203e49',1);
+      path([[-247,-6],[-137,-42],[-137,-38],[-247,-2]],'#cab99a','#557c7b',1);
+      for(let i=0;i<12;i++){const t=i/11;line(-246+t*108,-7-t*36,-243+t*108,-6-t*36,'#f3e7cb',1);}
+      line(-246,-26,-137,-62,'#698c87',1.5);
+      for(let i=0;i<5;i++){const t=i/4;line(-246+t*109,-7-t*36,-246+t*109,-26-t*36,'#7d9e95',1.2);}
+      const people=Tide.boardingPassengers(s),waiting=people.filter(p=>p.progress===0).slice(0,6);
+      waiting.forEach((p,i)=>person(-279-i*12,-7,['#c38368','#749f92','#dfb765','#8594bd'][p.id%4],.9));
+      for(const p of people)if(p.progress>0&&!p.aboard){ctx.globalAlpha=p.progress>.92?(1-p.progress)/.08:1;person(p.x,p.y,['#c38368','#749f92','#dfb765','#8594bd'][p.id%4],.9,p.phase);}ctx.globalAlpha=1;
+      line(-246,-15,-137,-51,'#e0d6b5',1.8);
+      rect(-275,-81,112,18,'#eff0dae8',3);text('BOARDING / HOLD E',-219,-69,8,'#2b5b63','center');ctx.restore();
     }
     function crane(s) {
       const c=s.crane;if(!c||X(c.origin)>width+650*zoom||X(c.origin)<-650*zoom)return;
@@ -141,14 +155,15 @@
       }
     }
     function ship(s) {
-      const x=X(s.ship.x),y=Y(s.ship.y),v=s.vessel;
+      const x=X(s.ship.x),y=Y(s.ship.y),v=s.vessel,paint=GarageCatalog.paints[s.paintId];
       ctx.save();ctx.translate(x,y);ctx.rotate(-s.ship.angle);ctx.scale(zoom,zoom);
       // Engine exhaust and a small wind-tossed flag, both drawn from simulation time.
       if(s.ship.engine&&Math.abs(s.ship.vx)>3)for(let i=0;i<13;i++){const age=(s.time*1.25+i/2)%6;circle(-94-age*19,-112-age*8+Math.sin(age+i)*2,3+age*2,`rgba(66,84,83,${Math.max(0,.15-age*.025)})`);}
       if(v==='cargo'){
         ctx.fillStyle='#253f4c';ctx.beginPath();ctx.moveTo(-154,-24);ctx.lineTo(148,-29);ctx.quadraticCurveTo(168,-30,151,-4);ctx.quadraticCurveTo(137,24,108,30);ctx.lineTo(-126,30);ctx.quadraticCurveTo(-149,23,-154,-24);ctx.fill();
         path([[-150,4],[146,4],[131,25],[110,31],[-124,31],[-143,21]],'#ad6554');line(-152,-20,151,-25,'#f4d5a2',3);line(-145,0,146,-4,'#9db3a5',1);
-        rect(-139,-72,58,45,'#e2ddc6',2);rect(-130,-98,52,29,'#eae4d1',2);rect(-135,-101,65,5,'#43646a',1);
+        if(paint){ctx.save();path([[-151,-21],[147,-26],[153,-6],[133,20],[110,29],[-125,29],[-143,19]],null);ctx.clip();FleetArt.pattern(ctx,paint,-154,-28,308,59);ctx.restore();}
+        rect(-139,-72,58,45,paint?FleetArt.shade(paint.accent,.9):'#e2ddc6',2);rect(-130,-98,52,29,'#eae4d1',2);rect(-135,-101,65,5,'#43646a',1);
         for(let i=0;i<4;i++){rect(-126+i*12,-93,9,13,'#567e84',1);line(-125+i*12,-92,-121+i*12,-82,'#c6e2d066',1);}
         rect(-135,-57,15,25,'#77908c',1);circle(-123,-43,1,'#e7d9b5');rect(-94,-66,9,14,'#67858a');rect(-115,-121,14,20,'#45626c',1);rect(-115,-118,14,6,'#c57553');
         rect(-88,-131,3,30,'#6c8686');line(-104,-119,-70,-119,'#5c7d7d');line(-87,-132,-87,-146,'#446a73');
@@ -163,9 +178,10 @@
       }else{
         ctx.fillStyle='#e7e6d5';ctx.beginPath();ctx.moveTo(-168,-36);ctx.lineTo(170,-36);ctx.quadraticCurveTo(176,-25,149,11);ctx.quadraticCurveTo(137,28,108,31);ctx.lineTo(-131,31);ctx.quadraticCurveTo(-155,27,-168,-36);ctx.fill();
         path([[-160,-7],[160,-9],[141,17],[110,30],[-130,30],[-150,17]],'#294f5c');path([[-151,15],[143,15],[131,26],[110,32],[-127,32]],'#bb765d');line(-159,-9,162,-11,'#c1b375',2);
+        if(paint){ctx.save();path([[-166,-34],[168,-34],[149,10],[133,23],[109,29],[-130,29],[-153,21]],null);ctx.clip();FleetArt.pattern(ctx,paint,-168,-36,338,67);ctx.restore();}
         for(let deck=0;deck<3;deck++){
           const xx=-142+deck*16,ww=275-deck*21,yy=-57-deck*23;
-          rect(xx,yy,ww,23,'#efeee0',3);rect(xx-3,yy+19,ww+6,3,'#9cb7b1');
+          rect(xx,yy,ww,23,paint?FleetArt.shade(paint.body,1.12):'#efeee0',3);rect(xx-3,yy+19,ww+6,3,'#9cb7b1');
           for(let w=0;w<Math.floor(ww/14)-1;w++){rect(xx+7+w*14,yy+6,8,9,'#5f9299',2);rect(xx+8+w*14,yy+7,3,3,'#b3d6cd');}
           line(xx,yy+3,xx+ww,yy+3,'#faf6df',2);
         }
@@ -218,7 +234,7 @@
       scenery(s);ocean(s);harbor(s,false);harbor(s,true);
       // Navigation buoys are fixed to the route, making forward and reverse motion legible.
       const first=Math.floor((cameraX-center/zoom)/650);for(let i=first;i<first+Math.ceil(width/zoom/650)+2;i++){const bx=650*i+510;if(bx<650||bx>s.destination-450)continue;const xx=X(bx),yy=Y(Tide.sea(s,bx));path([[xx-6*zoom,yy],[xx+6*zoom,yy],[xx+4*zoom,yy-10*zoom],[xx-4*zoom,yy-10*zoom]],'#d69962');line(xx,yy-10*zoom,xx,yy-30*zoom,'#e5c491',2*zoom);circle(xx,yy-31*zoom,2*zoom,'#f5df9a');}
-      for(const p of s.pirates)pirate(s,p);ship(s);crane(s);ocean(s,true);swimmer(s);effects(s,aim);
+      for(const p of s.pirates)pirate(s,p);ship(s);boarding(s);crane(s);ocean(s,true);swimmer(s);effects(s,aim);
       const storm=s.waves.some(w=>w.tsunami&&Math.abs(w.x-s.ship.x)<500);
       if(storm){rect(0,0,width,height,'#355e700d');for(let i=0;i<35;i++){const x=(rand(i+60)*width+s.time*90)%width,y=(rand(i+160)*height+s.time*210)%height;line(x,y,x-4,y+11,'#e0f1ed33',1);}}
     }

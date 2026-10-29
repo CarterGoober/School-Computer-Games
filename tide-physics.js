@@ -20,7 +20,7 @@
     return {
       vessel, difficulty, spec, config, seed: seed >>> 0, time: 0, voyageTime: 0, stage: 'loading',
       ship: { x: 200, y: 0, vy: 0, angle: 0, angular: 0, vx: 0, hull: 100, pressure: 100, engine: true, restart: 0, gunAngle: 0 },
-      source: 200, destination: spec.destination, load: 0, unload: 0, onboard: 0, repair: 0, repairKits: config.repairKits, crane: vessel === 'cargo' ? Crane.create(200) : null,
+      loadingActive: false, boardingTime: 0, source: 200, destination: spec.destination, load: 0, unload: 0, onboard: 0, repair: 0, repairKits: config.repairKits, crane: vessel === 'cargo' ? Crane.create(200) : null,
       eventIn: config.eventEvery * .56, waveIn: config.waveEvery * .65, eventNumber: 0, waves: [], pirates: [], shots: [], effects: [],
       swimmer: null, shotCooldown: 0, spray: false, repairActive: false, notice: null, failure: '', score: 0, nextId: 1,
       stats: { pirates: 0, rescues: 0, restarts: 0, events: 0, waves: 0, tsunamis: 0, shots: 0, damage: 0 }
@@ -64,7 +64,7 @@
       const x = s.ship.x - s.spec.length * .5 - 60;
       s.swimmer = { x, time: s.config.rescueTime, progress: 0 };
       s.onboard--;
-      notify(s, 'PERSON OVERBOARD · Brake, return to the life ring, and hold E.', 'danger');
+      notify(s, 'PERSON OVERBOARD · S to brake, A / ← to reverse, then hold E to rescue.', 'danger');
     } else return false;
     s.stats.events++;
     return true;
@@ -105,7 +105,7 @@
     if (s.stage === 'loading') return { label: s.vessel === 'cargo' ? 'Load cargo' : 'Board passengers', hint: s.vessel === 'cargo' ? 'Hold E to operate the loading crane' : 'Hold E to welcome your passengers', ready: true, progress: s.load };
     if (s.swimmer) {
       const near = Math.abs(s.ship.x - s.swimmer.x) < s.spec.length / 2 + 95;
-      return { label: 'Rescue passenger', hint: !near ? 'Return to the life ring' : !slow ? 'Brake to rescue safely' : 'Hold E to pull them aboard', ready: near && slow, progress: s.swimmer.progress };
+      return { label: 'Rescue passenger', hint: !near ? (s.swimmer.x< s.ship.x?'Hold A / ← to reverse to the life ring':'Hold D / → to return to the life ring') : !slow ? 'Brake to rescue safely' : 'Hold E to pull them aboard', ready: near && slow, progress: s.swimmer.progress };
     }
     const distance = Math.abs(s.ship.x - s.destination), near = distance < 115;
     return { label: s.vessel === 'cargo' ? 'Unload cargo' : 'Disembark passengers', hint: near ? (slow ? 'Hold E to finish your delivery' : 'Brake to dock safely') : distance < 550 ? 'Dock ahead · ease off and brake' : 'Sail to Northstar Pier', ready: near && slow, progress: s.unload };
@@ -132,19 +132,22 @@
     s.effects = s.effects.filter(e => e.age < 1.1);
     s.spray = false; s.repairActive = false;
     if (s.stage === 'loading' && s.crane) {
-      const previous = s.onboard, recovered = s.crane.recovered;
+      const previous = s.onboard, recovered = s.crane.recovered, perfects = s.crane.perfects;
       Crane.step(s.crane, input, dt); s.onboard = Crane.loaded(s.crane); s.load = s.onboard / s.spec.capacity;
       if (s.crane.recovered > recovered) notify(s, 'DOCK CREW RECOVERED THE BOX · Pick it up and try again.', 'warning');
-      if (s.onboard > previous) notify(s, s.onboard === 6 ? 'ALL CARGO SECURED · Press E to leave the crane and sail.' : `CONTAINER SECURED · ${s.onboard} / 6 loaded.`, 'good');
+      if (s.crane.perfects > perfects) notify(s, `PERFECT PLACEMENT · +120 points · ${s.onboard} / 6 secured.${s.onboard===6?' Press E to sail.':''}`, 'good');
+      else if (s.onboard > previous) notify(s, s.onboard === 6 ? 'ALL CARGO SECURED · Press E to leave the crane and sail.' : `CONTAINER SECURED · ${s.onboard} / 6 loaded.`, 'good');
       // Mooring holds the deck steady while cargo is being handled. Ship controls unlock on departure.
       ship.x = s.source; ship.vx = ship.y = ship.vy = ship.angle = ship.angular = 0;
       if (s.onboard === 6 && input.interact) depart(s);
       return;
     }
     if (s.stage === 'loading') {
+      s.loadingActive=!!input.interact;if(s.loadingActive)s.boardingTime+=dt;
+      ship.x=s.source;ship.vx=ship.y=ship.vy=ship.angle=ship.angular=0;
       if (input.interact) {
         s.load = clamp(s.load + dt / s.spec.loadTime, 0, 1);
-        s.onboard = Math.floor(s.load * s.spec.capacity + .00001);
+        s.onboard = boardingPassengers(s).filter(p=>p.aboard).length;
         if (s.load >= 1) { s.stage = 'sailing'; notify(s, 'LINES OFF · Northstar Pier is to the right. Hold D or → to sail.', 'good'); }
       }
     } else {
@@ -236,7 +239,8 @@
     }
     s.shots = s.shots.filter(shot => shot.age < 1.5);
   }
-  const api = { clamp, difficulties, vessels, create, step, sea, interaction, triggerIncident, spawnWave, tapRestart, fire, gunPosition, Crane, craneAction, depart };
+  function boardingPassengers(s){return Array.from({length:s.spec.capacity},(_,i)=>{const t=clamp((s.load*(s.spec.capacity+10)-i)/10,0,1),ramp=clamp((t-.22)/.78,0,1);return{id:i,progress:t,aboard:t>=1,x:t<.22?-275+t/.22*30:-245+ramp*108,y:-7-ramp*36,phase:s.boardingTime*12+i*1.7};});}
+  const api = { boardingPassengers, clamp, difficulties, vessels, create, step, sea, interaction, triggerIncident, spawnWave, tapRestart, fire, gunPosition, Crane, craneAction, depart };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Tide = api;
 })(typeof window !== 'undefined' ? window : globalThis);

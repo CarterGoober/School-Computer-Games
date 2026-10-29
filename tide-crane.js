@@ -4,7 +4,7 @@
   const geometry = Object.freeze({ boom: 240, width: 46, height: 31, sling: 8, dock: 7, railLeft: -65, railRight: 355, minLength: 36, maxLength: 242 });
   const colors = ['#d5a45c', '#728f89', '#bc785f', '#7a9a9c', '#c5b17b', '#ba7c63'];
   function create(origin) {
-    return { origin, x: origin + 205, vx: 0, length: 112, winch: 0, angle: 0, omega: 0, held: null, recovered: 0, blocked: false,
+    return { origin, x: origin + 205, vx: 0, length: 112, winch: 0, angle: 0, omega: 0, held: null, recovered: 0, perfects: 0, blocked: false,
       boxes: Array.from({ length: 6 }, (_, id) => ({ id, x: origin + 205 + id % 3 * 60, y: geometry.dock + Math.floor(id / 3) * 33, vx: 0, vy: 0, angle: 0, status: 'dock', slot: null, color: colors[id] })) };
   }
   function hook(c) { return { x: c.x + Math.sin(c.angle) * c.length, y: geometry.boom - Math.cos(c.angle) * c.length }; }
@@ -26,6 +26,7 @@
       const b = c.boxes[c.held]; b.status = 'falling'; b.angle = c.angle * .4; c.held = null;
       // Loading guides center a slow release close to a bay. High/fast drops retain momentum.
       const bay = target(c, b.x);
+      b.perfect = !!bay && Math.abs(b.x-bay.x)<=9 && Math.abs(b.vx)<=24 && Math.abs(c.angle)<.14 && b.y>=bay.y-2 && b.y<=bay.y+20;
       if (bay && b.y >= bay.y - 2 && b.y < bay.y + 48 && Math.abs(b.vx) < 70) { b.x = bay.x; b.vx = 0; }
       return { changed: true, message: 'CONTAINER RELEASED · Let it settle into a marked bay.' };
     }
@@ -34,7 +35,7 @@
     // Catch at the container's existing lifting point; grabbing never teleports the load.
     const dx = b.x - c.x, dy = geometry.boom - (b.y + geometry.height + geometry.sling);
     c.length = Math.hypot(dx, dy); c.angle = Math.atan2(dx, dy); c.omega *= .35; c.winch = 0;
-    b.status = 'held'; b.vx = b.vy = 0; c.held = b.id;
+    b.perfect = false; b.status = 'held'; b.vx = b.vy = 0; c.held = b.id;
     return { changed: true, message: 'CARGO ATTACHED · W to lift clear, A/D to travel. Tap Space to release.' };
   }
   function floor(c, x, exclude, carrying) {
@@ -52,7 +53,7 @@
       const x = c.origin + offset;
       return { x, y: Math.max(geometry.dock, ...c.boxes.filter(other => other.id !== b.id && other.status === 'dock' && Math.abs(other.x - x) < 45).map(other => other.y + 33)) };
     }).sort((a, b) => a.y - b.y);
-    Object.assign(b, { x: columns[0].x, y: columns[0].y, vx: 0, vy: 0, angle: 0, status: 'dock', slot: null }); c.recovered++;
+    Object.assign(b, { x: columns[0].x, y: columns[0].y, vx: 0, vy: 0, angle: 0, status: 'dock', slot: null, perfect: false }); c.recovered++;
   }
   function step(c, input, dt) {
     if (dt <= 0) return;
@@ -91,7 +92,7 @@
       const oldBottom = b.y; b.vy -= 310 * dt; b.vx *= Math.exp(-dt * .35); b.x += b.vx * dt; b.y += b.vy * dt; b.angle *= Math.exp(-dt * 2);
       const bay = target(c, b.x), ground = floor(c, b.x, b.id, true);
       if (b.vy < 0 && oldBottom >= ground - 4 && b.y <= ground) {
-        if (bay && Math.abs(ground - bay.y) < 3) Object.assign(b, { x: bay.x, y: bay.y, vx: 0, vy: 0, angle: 0, status: 'loaded', slot: bay.id });
+        if (bay && Math.abs(ground - bay.y) < 3) { Object.assign(b, { x: bay.x, y: bay.y, vx: 0, vy: 0, angle: 0, status: 'loaded', slot: bay.id }); if(b.perfect)c.perfects++; }
         else if (b.x > c.origin + 177 && b.x < c.origin + 355) Object.assign(b, { y: ground, vx: 0, vy: 0, angle: 0, status: 'dock' });
         else recover(c, b);
       } else if (b.y < -70 || Math.abs(b.x - c.origin) > 650) recover(c, b);
