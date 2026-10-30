@@ -12,81 +12,102 @@
   {id:'double',name:'Double points',gravity:950,friction:.82,radius:13,mass:1,legs:53,points:2,wind:0},
   {id:'wind',name:'Crosswind',gravity:950,friction:.82,radius:13,mass:1,legs:53,points:1,wind:135}
  ];
- const floor=510,hoops=[100,900],rimY=245,halfRim=39;
+ const floor=510,hoops=[100,900],rimY=245,halfRim=35;
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
- function point(x,y){return{x,y,vx:0,vy:0};}
- function player(x,team,index,c){const hipY=floor-c.legs;return{team,index,nodes:[point(x,hipY-49),point(x,hipY),point(x-26,hipY-19),point(x+26,hipY-19),point(x-19,floor),point(x+19,floor)],angle:0,cooldown:0};}
+ function pose(p,c){
+  const hipY=p.y-c.legs,lean=clamp(p.vx/950,-.12,.12),headX=p.x+lean*48;
+  const shoulder={x:p.x+lean*33,y:hipY-34};
+  const angle=-.25+p.arm*1.65,hand={x:shoulder.x+p.facing*Math.cos(angle)*42,y:shoulder.y-Math.sin(angle)*42};
+  const stride=Math.sin(p.stride)*Math.min(13,Math.abs(p.vx)/13);
+  p.nodes=[{x:headX,y:hipY-58},{x:p.x,y:hipY},
+   {x:shoulder.x-p.facing*24,y:shoulder.y+22-p.arm*18},hand,
+   {x:p.x-14-stride,y:p.y-Math.max(0,stride*.35)},{x:p.x+14+stride,y:p.y-Math.max(0,-stride*.35)}];
+ }
+ function player(x,team,index,c){const p={x,y:floor,vx:0,vy:0,team,index,facing:team===0?1:-1,held:false,charge:0,arm:0,cooldown:0,blockCooldown:0,stride:0};pose(p,c);return p;}
  function round(s,condition){
   let next=condition||conditions[Math.floor(s.rng()*conditions.length)];
   if(!condition&&s.condition?.id===next.id)next=conditions[(conditions.indexOf(next)+1)%conditions.length];
   s.condition={...next};if(next.id==='wind'&&s.rng()<.5)s.condition.wind*=-1;
-  s.players=[player(310,0,0,s.condition),player(425,0,1,s.condition),player(575,1,2,s.condition),player(690,1,3,s.condition)];
-  s.ball={x:500,y:160,vx:(s.rng()-.5)*100,vy:0,r:s.condition.radius,holder:null,catchDelay:.5};
+  s.players=[player(280,0,0,s.condition),player(405,0,1,s.condition),player(595,1,2,s.condition),player(720,1,3,s.condition)];
+  s.ball={x:500,y:160,vx:(s.rng()-.5)*80,vy:0,r:s.condition.radius,holder:null,catchDelay:.5,possessed:0};
   s.phase='playing';s.timer=0;s.roundTime=0;s.lastScore=null;
  }
  function create(mode=2,rng=Math.random){const s={mode:mode===4?4:2,rng,scores:[0,0],round:1,phase:'playing',winner:null,timer:0,condition:null};round(s,conditions[0]);return s;}
- function shoot(s,p){
-  const b=s.ball,c=s.condition,target=hoops[p.team===0?1:0];
-  const apex=Math.max(b.r+20,Math.min(70,b.y-75)),vy=-Math.sqrt(2*c.gravity*Math.max(1,b.y-apex));
-  const t=(-vy+Math.sqrt(vy*vy+2*c.gravity*(rimY-b.y)))/c.gravity;
-  b.holder=null;b.catchDelay=.3;
-  b.vx=(target-b.x-.5*c.wind*t*t)/t+(s.rng()-.5)*30;
-  b.vy=vy;
-  for(const n of p.nodes)n.vx-=(p.team===0?1:-1)*30/c.mass;
- }
+ const controlled=(s,index)=>s.players.filter(p=>s.mode===2?p.team===index:p.index===index);
  function press(s,index){
   if(s.phase!=='playing')return;
-  const ids=s.mode===2?s.players.filter(p=>p.team===index):s.players.filter(p=>p.index===index);
-  for(const p of ids){
-   if(p.cooldown>0)continue;p.cooldown=.23;
-   const b=s.ball,holding=b.holder===p.index,hip=p.nodes[1],direction=holding?(p.team===0?1:-1):Math.sign(b.x-hip.x);
-   const grounded=p.nodes.slice(4).some(n=>n.y>floor-14);
-   if(grounded)for(const n of p.nodes){n.vy-=s.condition.gravity<600?290:415;n.vx+=direction*(s.condition.id==='ice'?125:105);}
-   // Arms swing even in the air. Contact can knock a loose ball or block an opponent.
-   p.nodes[2].vy-=95;p.nodes[3].vy-=95;
-   if(holding)shoot(s,p);
-   else if(b.holder===null&&Math.hypot(b.x-hip.x,b.y-(hip.y-32))<110&&b.catchDelay<=0){b.holder=p.index;shoot(s,p);}
+  for(const p of controlled(s,index)){
+   if(p.held)continue;p.held=true;p.charge=0;
+   if(p.y>=floor-.1&&p.cooldown<=0){p.vy=-Math.sqrt(2*s.condition.gravity*90);p.cooldown=.25;}
   }
  }
- function constrain(a,b,length){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,k=(d-length)/d*.5;a.x+=dx*k;a.y+=dy*k;b.x-=dx*k;b.y-=dy*k;}
- function score(s,team){if(s.phase!=='playing')return;s.scores[team]+=s.condition.points;s.lastScore=team;s.timer=1.8;s.phase='round';if(s.scores[team]>=5){s.winner=team;s.phase='finished';}}
- function circle(b,x,y,r,bounce=.72){const dx=b.x-x,dy=b.y-y,d=Math.hypot(dx,dy),min=b.r+r;if(d>=min)return;const nx=d?dx/d:0,ny=d?dy/d:-1;b.x=x+nx*min;b.y=y+ny*min;const v=b.vx*nx+b.vy*ny;if(v<0){b.vx-=(1+bounce)*v*nx;b.vy-=(1+bounce)*v*ny;}}
+ function release(s,index,cancel=false){
+  for(const p of controlled(s,index)){
+   if(!p.held)continue;p.held=false;
+   if(!cancel&&s.phase==='playing'&&s.ball.holder===p.index)shoot(s,p);
+   p.charge=0;
+  }
+ }
+ function cancelInput(s){for(let i=0;i<s.mode;i++)release(s,i,true);}
+ function shoot(s,p){
+  const b=s.ball,c=s.condition,q=clamp(p.charge/1.15,0,1);
+  // A real launch: power and arm angle come from the hold, never from the hoop position.
+  // Long holds reach a plateau; distance, release timing, momentum and wind decide the result.
+  const speed=(260+q*600)/Math.pow(c.mass,.1),angle=.48+q*.87;
+  b.holder=null;b.catchDelay=.28;b.possessed=0;
+  b.vx=p.facing*Math.cos(angle)*speed+p.vx*.35;
+  b.vy=-Math.sin(angle)*speed+p.vy*.3;
+ }
+ function score(s,team){if(s.phase!=='playing')return;cancelInput(s);s.scores[team]+=s.condition.points;s.lastScore=team;s.timer=1.5;s.phase='round';if(s.scores[team]>=5){s.winner=team;s.phase='finished';}}
+ function circle(b,x,y,r,bounce=.7){const dx=b.x-x,dy=b.y-y,d=Math.hypot(dx,dy),min=b.r+r;if(d>=min)return;const nx=d?dx/d:0,ny=d?dy/d:-1;b.x=x+nx*min;b.y=y+ny*min;const v=b.vx*nx+b.vy*ny;if(v<0){b.vx-=(1+bounce)*v*nx;b.vy-=(1+bounce)*v*ny;}}
  function step(s,dt){
   if(!Number.isFinite(dt)||dt<=0)return;dt=clamp(dt,0,1/60);
   if(s.phase==='round'){s.timer-=dt;if(s.timer<=0){s.round++;round(s);}return;}
   if(s.phase!=='playing')return;
-  s.roundTime+=dt;const c=s.condition,b=s.ball,oldY=b.y;
+  s.roundTime+=dt;const c=s.condition,b=s.ball,oldY=b.y,oldX=b.x;
   for(const p of s.players){
-   p.cooldown=Math.max(0,p.cooldown-dt);const prev=p.nodes.map(n=>({x:n.x,y:n.y}));
-   // Gravity plus a soft upright spring leaves limbs free to tumble on landing.
-   p.nodes[0].vx+=(p.nodes[1].x-p.nodes[0].x)*17*dt;
-   p.nodes[0].vy-=280*dt;p.nodes[1].vy+=90*dt;
-   for(const n of p.nodes){n.vy+=c.gravity*dt;n.vx*=Math.pow(.996,dt*120);n.x+=n.vx*dt;n.y+=n.vy*dt;}
-   for(let i=0;i<7;i++){
-    const n=p.nodes;constrain(n[0],n[1],49);constrain(n[0],n[2],40);constrain(n[0],n[3],40);constrain(n[2],n[3],49);constrain(n[1],n[4],c.legs);constrain(n[1],n[5],c.legs);constrain(n[4],n[5],35);
-    for(let j=0;j<n.length;j++){const q=n[j];q.x=clamp(q.x,30,970);q.y=clamp(q.y,35,floor-(j===0?12:0));}
-   }
-   for(let i=0;i<p.nodes.length;i++){const n=p.nodes[i];n.vx=clamp((n.x-prev[i].x)/dt,-650,650);n.vy=clamp((n.y-prev[i].y)/dt,-950,950);if(n.y>=floor-.1)n.vx*=Math.pow(c.friction,dt*60);}
+   p.cooldown=Math.max(0,p.cooldown-dt);p.blockCooldown=Math.max(0,p.blockCooldown-dt);
+   if(p.held)p.charge=Math.min(1.4,p.charge+dt);
+   const targetArm=p.held?clamp(p.charge/1.15,0,1):b.holder===p.index?.22:0;
+   p.arm+=(targetArm-p.arm)*Math.min(1,dt*12);
+   const possession=b.holder===p.index,goal=possession?(p.team===0?590:410):b.x;
+   const direction=Math.abs(goal-p.x)>24?Math.sign(goal-p.x):0;
+   if(p.held){p.vx+=direction*600*dt;p.vx=clamp(p.vx,-170,170);}
+   else p.vx*=Math.pow(c.id==='ice'?.993:.91,dt*60);
+   p.vy+=c.gravity*dt;p.x=clamp(p.x+p.vx*dt,35,965);p.y+=p.vy*dt;
+   if(p.y>=floor){p.y=floor;p.vy=0;}
+   p.stride+=Math.abs(p.vx)*dt*.05;
+   // The torso stays upright, with only a small running lean; limbs never collapse.
+   pose(p,c);
+  }
+  for(let i=0;i<s.players.length;i++)for(let j=i+1;j<s.players.length;j++){
+   const a=s.players[i],p=s.players[j],dx=p.x-a.x;
+   if(Math.abs(dx)<36&&Math.abs(p.y-a.y)<55){const push=(36-Math.abs(dx))*.5,dir=dx>=0?1:-1;a.x=clamp(a.x-dir*push,35,965);p.x=clamp(p.x+dir*push,35,965);pose(a,c);pose(p,c);}
   }
   b.catchDelay=Math.max(0,b.catchDelay-dt);
-  if(b.holder!==null){const p=s.players[b.holder],hand=p.nodes[p.team===0?3:2];b.x=hand.x;b.y=hand.y-18;b.vx=hand.vx;b.vy=hand.vy;return;}
+  if(b.holder!==null){
+   const p=s.players[b.holder],hand=p.nodes[3];b.possessed+=dt;b.x=hand.x+p.facing*(b.r*.5);b.y=hand.y-b.r*.6;b.vx=p.vx;b.vy=p.vy;
+   for(const defender of s.players)if(defender.team!==p.team&&defender.held&&defender.arm>.35&&defender.blockCooldown===0&&b.possessed>.4&&Math.hypot(defender.nodes[3].x-b.x,defender.nodes[3].y-b.y)<b.r+24){b.holder=null;b.vx=defender.facing*210;b.vy=-230;b.catchDelay=.25;defender.blockCooldown=.8;break;}
+   return;
+  }
   b.vx+=c.wind*dt;b.vy+=c.gravity*dt;b.x+=b.vx*dt;b.y+=b.vy*dt;
-  if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.8;}if(b.x>1000-b.r){b.x=1000-b.r;b.vx=-Math.abs(b.vx)*.8;}
+  if(b.x<b.r){b.x=b.r;b.vx=Math.abs(b.vx)*.65;}if(b.x>1000-b.r){b.x=1000-b.r;b.vx=-Math.abs(b.vx)*.65;}
   if(b.y<b.r){b.y=b.r;b.vy=Math.abs(b.vy)*.6;}
-  if(b.y>floor-b.r){b.y=floor-b.r;b.vy=-Math.abs(b.vy)*.72;b.vx*=.98;if(Math.abs(b.vy)<35)b.vy=0;}
+  if(b.y>floor-b.r){b.y=floor-b.r;b.vy=-Math.abs(b.vy)*.67;b.vx*=.96;if(Math.abs(b.vy)<35)b.vy=0;}
   for(let i=0;i<hoops.length;i++){
    const x=hoops[i],board=i===0?x-halfRim-10:x+halfRim+10;
-   if(b.vy>0&&oldY<rimY&&b.y>=rimY&&Math.abs(b.x-x)<halfRim-b.r*.55){score(s,i===0?1:0);return;}
-   circle(b,x-halfRim,rimY,5);circle(b,x+halfRim,rimY,5);
-   if(b.y>rimY-85&&b.y<rimY+12&&Math.abs(b.x-board)<b.r+5){b.x=board+Math.sign(b.x-board||1)*(b.r+5);b.vx*=-.8;}
+   const crossX=oldX+(b.x-oldX)*(rimY-oldY)/(b.y-oldY||1);
+   if(b.vy>0&&oldY<rimY&&b.y>=rimY&&Math.abs(crossX-x)<halfRim-b.r*.6){score(s,i===0?1:0);return;}
+   circle(b,x-halfRim,rimY,4);circle(b,x+halfRim,rimY,4);
+   if(b.y>rimY-85&&b.y<rimY+12&&Math.abs(b.x-board)<b.r+5){b.x=board+Math.sign(b.x-board||1)*(b.r+5);b.vx*=-.75;}
   }
-  for(const p of s.players){
-   const hip=p.nodes[1],hand=p.nodes[p.team===0?3:2];
-   if(b.catchDelay<=0&&Math.hypot(b.x-hand.x,b.y-hand.y)<b.r+29&&Math.abs(b.vy)<650){b.holder=p.index;return;}
-   circle(b,p.nodes[0].x,p.nodes[0].y,14,.7);circle(b,hip.x,hip.y-20,15,.65);
-  }
-  // A new neutral drop prevents a motionless ball from stalling a local match.
-  if(s.roundTime>35){b.x=500;b.y=100;b.vx=(s.rng()-.5)*150;b.vy=0;b.catchDelay=.5;s.roundTime=0;}
+  // Closest eligible player gets possession, so array order doesn't favor a team.
+  const candidates=s.players.filter(p=>b.catchDelay<=0&&Math.abs(b.vy)<680&&
+   (Math.hypot(b.x-p.nodes[3].x,b.y-p.nodes[3].y)<b.r+24||Math.hypot(b.x-p.x,b.y-(p.y-37))<b.r+28));
+  candidates.sort((a,p)=>Math.hypot(b.x-a.x,b.y-a.nodes[1].y)-Math.hypot(b.x-p.x,b.y-p.nodes[1].y));
+  if(candidates.length){b.holder=candidates[0].index;b.possessed=0;return;}
+  for(const p of s.players){circle(b,p.nodes[0].x,p.nodes[0].y,16);circle(b,p.x,p.nodes[1].y-24,17);if(p.held)circle(b,p.nodes[3].x,p.nodes[3].y,9,.85);}
+  if(s.roundTime>40&&Math.abs(b.vx)<8&&Math.abs(b.vy)<8){b.x=500;b.y=160;b.vy=0;b.catchDelay=.5;s.roundTime=0;}
  }
- const api={conditions,create,round,press,step,score,floor,hoops,rimY,halfRim};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RumblePhysics=api;
+ const api={conditions,create,round,press,release,cancelInput,step,score,floor,hoops,rimY,halfRim};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.RumblePhysics=api;
 })(typeof window!=='undefined'?window:globalThis);
