@@ -15,7 +15,7 @@ create table if not exists public.garage_feedback (
  check (kind <> 'review' or rating is not null)
 );
 alter table public.garage_feedback drop constraint if exists garage_feedback_game_check;
-alter table public.garage_feedback add constraint garage_feedback_game_check check (game in ('hub','apex','drift','tide','basketball'));
+alter table public.garage_feedback add constraint garage_feedback_game_check check (game in ('hub','apex','drift','tide','basketball','train'));
 alter table public.garage_feedback enable row level security;
 revoke all on public.garage_feedback from public, anon, authenticated;
 create index if not exists garage_feedback_public_recent on public.garage_feedback(game,created_at desc,id desc) where visible;
@@ -40,7 +40,7 @@ begin
  if p_username is null or char_length(btrim(p_username)) not between 2 and 24 or p_username ~ '[[:cntrl:]]'
  or p_title is null or char_length(btrim(p_title)) not between 1 and 90 or p_title ~ '[[:cntrl:]]'
  or p_message is null or char_length(btrim(p_message)) not between 10 and 1200
- or p_game is null or p_game not in ('hub','apex','drift','tide','basketball')
+ or p_game is null or p_game not in ('hub','apex','drift','tide','basketball','train')
  or p_kind is null or p_kind not in ('review','bug','idea')
  or (p_kind='review' and p_rating is null) or (p_rating is not null and p_rating not between 1 and 5)
  then raise exception 'Check your username, rating, and feedback details.'; end if;

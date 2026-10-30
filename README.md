@@ -78,7 +78,7 @@ Racing controls: WASD or arrow keys to drive; Space for handbrake/drift; C to re
 
 ## Install on a Chromebook
 
-Host the files at an HTTPS static host such as GitHub Pages. Open the hub once, wait for **OFFLINE READY**, then use **Install the garage** when available or Chrome's **Install page as app** menu command. Launch Afterclass Garage from the Chromebook Launcher to open it in a standalone app window. All four games and all routes are cached for offline use. Initial load requires an allowed internet connection and installation requires browser/device permission. This app does not bypass school restrictions. Localhost is also a secure context for development; file:// and remote plain HTTP do not support PWA installation.
+Host the files at an HTTPS static host such as GitHub Pages. Open the hub once, wait for **OFFLINE READY**, then use **Install the garage** when available or Chrome's **Install page as app** menu command. Launch Afterclass Garage from the Chromebook Launcher to open it in a standalone app window. All five games and all routes are cached for offline use. Initial load requires an allowed internet connection and installation requires browser/device permission. This app does not bypass school restrictions. Localhost is also a secure context for development; file:// and remote plain HTTP do not support PWA installation.
 
 Existing installed copies of Apex Circuit use the same app identity and scope. After deploying this update, reopen/reload while online so the new service worker installs, then reload to see the hub. Existing Apex lap records are preserved. The new street layouts use separate Sunday Slide lap records so old countryside times are not compared against new routes; the old records remain stored on the device. Clearing site data removes records and cached files.
 
@@ -165,3 +165,26 @@ TEST_BASE_URL=http://127.0.0.1:8000 node test-shop-browser.cjs
 ```
 
 `test-shop.cjs` covers 900 UTC rotations, yesterday avoidance, exact premium prices, contents/odds, insufficient funds, duplicate refunds, guaranteed ownership, stale offers, simultaneous confirmations/contexts, storage failure, equipment, reloads, unowned-vehicle livery retention, and preserved claims/records/earnings. The Chromium suite tests actual desktop/Chromebook/touch layouts, filters and previews, purchases and reveals, in-game equipping and return links, simultaneous tabs, midnight expiration, persistence, and offline purchases including the embedded query URL. All points and saves used by browser tests belong to isolated local test profiles. Supabase requests are blocked; no live feedback is submitted. Screenshots default to `/tmp/central-shop-review` (`SHOP_SCREENSHOTS` can override).
+
+
+### Summit Run — mountain train runner
+
+Launch `train.html` from the new Summit Run hub card. The original Little Locomotive proportions, red/umber colors, cab, chimney, roof and two cargo wagons are rebuilt as faceted 3D geometry. Three separate narrow mountain ridges carry one rail line each, with downhill grades, automatic yellow jump ramps, broken tracks and rocks on sections with alternative escape tracks. Original layered peaks rise through a cloud sea directly below the ridges. Sunrise/day/sunset/starry night transition continuously over a 210-second cycle of active play.
+
+Controls: W/Up throttle; S/Down brake; Space jump; A/D or Left/Right steer **only in the air**; Escape pause; R new run. Touch controls support simultaneous throttle/jump and release safely on pointer cancellation or loss of focus. Ramps launch automatically. Stay on the same path or transfer to an open ridge. Brake priority keeps speed positive; the minimum/coasting/maximum pace all increase over the first five minutes, then cap for fair reaction windows. Missing a landing or hitting a rock ends the run. Successful landings add 25 score; track changes add another 35. Distance also adds score. Best score/distance use the separate `afterclass-summit-v1` save.
+
+Garage Points use the current shared-wallet economy multiplier (0.595), with fractions retained between events and runs: successful landing base 6 (3.57 GP), track transfer extra base 3 (1.785 GP), every 10 active seconds base 3 (1.785 GP), every 1,000 score base 10 (5.95 GP), and one personal-best bonus per completed run above the previous record and at least 300 score, base 30 (17.85 GP). Pausing/falling produces no survival awards; failed landings award nothing. `train-rewards.js` deduplicates events by run and milestone; `Progression.awardGarage` credits a separate hub-rewards ledger in the existing wallet, leaving game profiles, daily tasks and collections intact. This game has no new purchasable vehicles/liveries yet.
+
+`train-physics.js` is a pure deterministic 120 Hz simulation with bounded world/history storage. `train-art.js` draws procedural 3D polygons on Canvas 2D with capped device-pixel ratio and distance fade; there are no remote assets. `train.js` manages menus, keyboard/touch, records, rewards and visibility pause. `train-cover.svg` is original artwork. The v16 service worker caches every train asset for offline play; the existing shop and wallet remain available offline. The feedback selector/backend now accepts `train`, with the original validation, permissions and moderation unchanged; no live review fixtures were posted.
+
+Verified checks:
+
+```sh
+node test-train.cjs
+TEST_BASE_URL=http://127.0.0.1:8000 node test-train-browser.cjs
+node test-wallet-migration.cjs
+node test-shop.cjs
+NODE_PATH=/tmp/garage-db-tests/node_modules node test-feedback-db.cjs
+```
+
+Physics tests cover downhill movement, brake priority, increasing pace, on-rail restriction, manual/automatic jumping, midair transfers, landing failures, rocks, bounded memory, and twelve three-minute runs using normal inputs across seeds and throttle/coast/brake strategies. Rewards tests cover current scaling, successful landings, milestones, record thresholds, deduplication and unchanged existing profiles. Actual Chromium checks cover keyboard play, forced transfers, pause/blur, records/reload, wallet updates, real portrait/landscape and simultaneous touch controls, offline play/shop access, and day/sunset/night screenshots. Browser checks use isolated local profiles. No physical Chromebook hardware benchmark is claimed.

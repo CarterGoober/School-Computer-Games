@@ -59,6 +59,16 @@
     let daily=0;for(const task of tasks(game,p.daily.date))if(!p.daily.claimed.includes(task.id)&&(Number(p.daily.progress[task.event])||0)>=task.goal){p.daily.claimed.push(task.id);daily+=task.reward;}
     p.balance+=points+daily;p.earned+=points+daily;p.events=p.events.slice(-600);save(game,p);return{points,daily,total:points+daily};
   }
+  // Hub activities earn into the same wallet without changing any game's tasks or collection.
+  function awardGarage(source,points,id){
+    if(typeof source!=='string'||!source||typeof id!=='string'||!id||!Number.isFinite(points)||points<0)return{points:0,total:0};
+    const w=wallet(),key=source+':'+id,r=w.hubRewards||{remainder:0,events:[],earned:0};
+    if(r.events.includes(key))return{points:0,total:0};
+    const scaled=points*.85*.7+r.remainder,whole=Math.floor(scaled+1e-9);
+    w.hubRewards={remainder:Math.max(0,scaled-whole),events:[...r.events,key].slice(-600),earned:r.earned+whole};w.balance+=whole;persistWallet(w);
+    if(typeof root.dispatchEvent==='function'&&typeof CustomEvent!=='undefined')root.dispatchEvent(new CustomEvent('garage:updated',{detail:{source,balance:w.balance}}));
+    return{points:whole,total:whole};
+  }
   function random(){if(root.crypto?.getRandomValues){const a=new Uint32Array(1);root.crypto.getRandomValues(a);return a[0]/4294967296;}return Math.random();}
   function purchase(game,type,tier,rng=random,transaction){
     const pack=C.packages[tier],p=read(game);if(!pack||!['vehicle','livery'].includes(type)||game==='tide'&&type==='vehicle')return{ok:false,error:'Choose an available box or spray can.'};
@@ -133,6 +143,6 @@
     const base=Math.round(rewardRates.voyageFinish*mult),speed=Math.round(clamp(72-s.voyageTime*.4,0,72)*mult),cargoPenalty=Math.round((base+speed)*cargoLost/6),completion=base+speed-cargoPenalty;earn(run,'finishes',1,completion);if(pb)earn(run,'best',1,pb);
     const fresh=read('tide');if(!cargoLost)fresh.bestTimes[key]=Math.min(best||Infinity,s.voyageTime);save('tide',fresh);run.done=true;return run.finish={base,speed,pb,mult,cargoLost,cargoPenalty,completion,total:run.awarded,daily:run.daily};
   }
-  const api={catalog:C,rewardRates,dateKey,tasks,read,event,purchase,checkout,equip,appearance,begin,updateDrive,updateBoat,finishRace,finishBoat,get storageAvailable(){return storageOK;}};
+  const api={catalog:C,rewardRates,dateKey,tasks,read,event,awardGarage,purchase,checkout,equip,appearance,begin,updateDrive,updateBoat,finishRace,finishBoat,get storageAvailable(){return storageOK;}};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Progression=api;
 })(typeof window!=='undefined'?window:globalThis);
