@@ -12,3 +12,6 @@
 @media(min-width:751px) and (min-height:600px){.g-shop{height:92vh;max-height:900px}.g-intro{margin-bottom:17px}.g-pack{padding:17px 18px}.g-pack-icon{width:75px;height:75px;margin:12px auto}.g-pack h4{font-size:21px;margin-bottom:7px}.g-pack>p{margin-bottom:12px}.g-pack dl{gap:6px;margin-bottom:13px;padding-top:11px}.g-pack>button{padding:11px 5px}.g-pack>small{margin-top:8px}.g-types{margin-bottom:13px}}
 
 .g-entry{display:block;width:100%;margin-top:12px;padding:10px;border:1px solid #93aa8d66;border-radius:4px;background:#85b39b18;color:#98b69e;font-size:9px;letter-spacing:1px}.g-reveal canvas{position:relative;z-index:1}
+
+/* The central shop opens over a paused game; collections stay here. */
+.g-central-shop{width:100%;height:100%;border:0;display:block;background:#f1ebdc}.g-shop.central-open .g-content{padding:0}.g-shop.central-open{width:1240px;height:96vh;max-height:1100px}.shop-reveal{height:92dvh;max-height:850px}

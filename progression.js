@@ -16,7 +16,7 @@
     const p=fresh(game);if(!data||typeof data!=='object')return p;
     for(const key of ['balance','earned'])if(Number.isSafeInteger(data[key])&&data[key]>=0)p[key]=data[key];
     p.owned=[...new Set([...p.owned,...(Array.isArray(data.owned)?data.owned:[]).filter(id=>C.games[game].models.includes(id))])];
-    p.liveries=(Array.isArray(data.liveries)?data.liveries:[]).filter(id=>C.paints[id]&&p.owned.includes(C.paints[id].vehicle));
+    p.liveries=(Array.isArray(data.liveries)?data.liveries:[]).filter(id=>C.paints[id]&&C.games[game].models.includes(C.paints[id].vehicle));
     if(p.owned.includes(data.equipped?.vehicle))p.equipped.vehicle=data.equipped.vehicle;
     for(const id of p.owned){const paint=data.equipped?.paints?.[id];if(p.liveries.includes(paint)&&C.paints[paint].vehicle===id)p.equipped.paints[id]=paint;}
     if(data.daily?.date===dateKey())p.daily={date:data.daily.date,progress:{...(data.daily.progress||{})},claimed:Array.isArray(data.daily.claimed)?data.daily.claimed:[]};
@@ -60,7 +60,7 @@
     p.balance+=points+daily;p.earned+=points+daily;p.events=p.events.slice(-600);save(game,p);return{points,daily,total:points+daily};
   }
   function random(){if(root.crypto?.getRandomValues){const a=new Uint32Array(1);root.crypto.getRandomValues(a);return a[0]/4294967296;}return Math.random();}
-  function purchase(game,type,tier,rng=random){
+  function purchase(game,type,tier,rng=random,transaction){
     const pack=C.packages[tier],p=read(game);if(!pack||!['vehicle','livery'].includes(type)||game==='tide'&&type==='vehicle')return{ok:false,error:'Choose an available box or spray can.'};
     const price=pack[type];if(p.balance<price)return{ok:false,error:`You need ${price-p.balance} more points.`};
     const roll=clamp(rng(),0,.999999999),tierIndex=roll<pack.odds[0]?0:roll<pack.odds[0]+pack.odds[1]?1:2,rarity=C.tiers[tierIndex];
@@ -68,7 +68,39 @@
     const item=pool[Math.floor(clamp(rng(),0,.999999999)*pool.length)];if(!item)return{ok:false,error:'No rewards available in this collection.'};
     const collection=type==='vehicle'?p.owned:p.liveries,duplicate=collection.includes(item.id),refund=duplicate?price*2/3:0;
     p.balance-=price;p.balance+=refund;if(!duplicate)collection.push(item.id);
-    const result={ok:true,type,tier,rarity,item:{id:item.id,name:item.name,vehicle:item.vehicle||item.id,kind:type},duplicate,refund,price,netCost:price-refund};p.lastDrop=result;save(game,p);return result;
+    const result={ok:true,type,tier,rarity,item:{id:item.id,name:item.name,vehicle:item.vehicle||item.id,kind:type},duplicate,refund,price,netCost:price-refund};p.lastDrop=result;if(transaction)return commitShop(game,p,result,transaction);save(game,p);return result;
+  }
+  // Central-shop commits keep the deduction, unlock and retry receipt in one durable write.
+  function commitShop(game,p,result,transaction){
+    if(!storageOK||walletWriteFailed||typeof localStorage==='undefined')return{ok:false,error:'Saving is unavailable. Nothing was purchased. Enable browser storage and reload.'};
+    const w=JSON.parse(JSON.stringify(wallet()));
+    w.balance=p.balance;w.profiles[game]=p;
+    w.shopReceipts=[...(w.shopReceipts||[]),{id:transaction.id,signature:transaction.signature,result}].slice(-128);
+    try{localStorage.setItem(WALLET_KEY,JSON.stringify(w));}catch{return{ok:false,error:'Could not save your purchase. Nothing was charged. Free some browser storage and try again.'};}
+    walletMemory=w;
+    if(typeof root.dispatchEvent==='function'&&typeof CustomEvent!=='undefined')root.dispatchEvent(new CustomEvent('garage:updated',{detail:{game,balance:w.balance}}));
+    return result;
+  }
+  async function checkout(request){
+    if(!root.navigator?.locks)return{ok:false,error:'Purchasing needs a current browser. Open the garage in an up-to-date Chrome, Edge, Firefox, or Safari.'};
+    return root.navigator.locks.request('afterclass-garage-purchase',()=>{
+      const {id,game,type,tier,offerId}=request;
+      if(typeof id!=='string'||id.length<8||id.length>100||!C.games[game]||!['vehicle','livery'].includes(type))return{ok:false,error:'Invalid purchase.'};
+      const signature=JSON.stringify([game,type,tier||null,offerId||null]);
+      const receipt=(wallet().shopReceipts||[]).find(r=>r.id===id);
+      if(receipt)return receipt.signature===signature?{...receipt.result,replayed:true}:{ok:false,error:'Purchase changed. Please review it again.'};
+      const transaction={id,signature};
+      if(!offerId)return purchase(game,type,tier,random,transaction);
+      const S=typeof module!=='undefined'&&module.exports?require('./shop-catalog.js'):root.ShopCatalog;
+      const offer=S.daily().offers.find(o=>o.id===offerId&&o.game===game&&o.type===type);
+      if(!offer)return{ok:false,error:'The daily offers have rotated. Review today’s selection before buying.'};
+      const p=read(game),item=offer.item,collection=type==='vehicle'?p.owned:p.liveries;
+      if(collection.includes(item.id))return{ok:false,error:'You already own this item in this game.'};
+      if(p.balance<offer.price)return{ok:false,error:`You need ${offer.price-p.balance} more points.`};
+      p.balance-=offer.price;collection.push(item.id);
+      const result={ok:true,type,tier:offer.rarity,rarity:offer.rarity,item:{id:item.id,name:item.name,vehicle:offer.vehicle,kind:type},duplicate:false,refund:0,price:offer.price,netCost:offer.price,guaranteed:true};
+      p.lastDrop=result;return commitShop(game,p,result,transaction);
+    });
   }
   function equip(game,vehicle,paint){const p=read(game);if(!p.owned.includes(vehicle))return false;if(paint&&(!p.liveries.includes(paint)||C.paints[paint]?.vehicle!==vehicle))return false;p.equipped.vehicle=vehicle;if(paint===null)delete p.equipped.paints[vehicle];else if(paint)p.equipped.paints[vehicle]=paint;save(game,p);return true;}
   function appearance(game,vehicle){const p=read(game);return C.paints[p.equipped.paints[vehicle]]||null;}
@@ -101,6 +133,6 @@
     const base=Math.round(rewardRates.voyageFinish*mult),speed=Math.round(clamp(72-s.voyageTime*.4,0,72)*mult),cargoPenalty=Math.round((base+speed)*cargoLost/6),completion=base+speed-cargoPenalty;earn(run,'finishes',1,completion);if(pb)earn(run,'best',1,pb);
     const fresh=read('tide');if(!cargoLost)fresh.bestTimes[key]=Math.min(best||Infinity,s.voyageTime);save('tide',fresh);run.done=true;return run.finish={base,speed,pb,mult,cargoLost,cargoPenalty,completion,total:run.awarded,daily:run.daily};
   }
-  const api={catalog:C,rewardRates,dateKey,tasks,read,event,purchase,equip,appearance,begin,updateDrive,updateBoat,finishRace,finishBoat,get storageAvailable(){return storageOK;}};
+  const api={catalog:C,rewardRates,dateKey,tasks,read,event,purchase,checkout,equip,appearance,begin,updateDrive,updateBoat,finishRace,finishBoat,get storageAvailable(){return storageOK;}};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Progression=api;
 })(typeof window!=='undefined'?window:globalThis);
