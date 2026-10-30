@@ -10,7 +10,7 @@
     drift:[['driftSeconds',10,'Hold drifts for 10 seconds total',180],['jumps',2,'Hit 2 jumps',160],['checkpoints',4,'Pass 4 checkpoints',120],['best',1,'Beat a personal best',220]],
     tide:[['loads',6,'Load 6 cargo containers',180],['pirates',2,'Repel 2 pirate boats',180],['restarts',1,'Restart a cruise engine',160],['rescues',1,'Rescue a passenger',180],['perfectLoads',2,'Make 2 perfect cargo placements',220]]
   };
-  function tasks(game,day=dateKey()){const hash=[...day].reduce((a,c)=>a*31+c.charCodeAt(0),0)>>>0,pool=taskPool[game],first=hash%pool.length;return[['finishes',1,game==='tide'?'Complete a delivery':'Finish a race',200],pool[first],pool[(first+1)%pool.length]].map(([event,goal,label,reward],id)=>({id:`${day}:${id}`,event,goal,label,reward:Math.round(Math.round(reward*.2)*.85)}));}
+  function tasks(game,day=dateKey()){const hash=[...day].reduce((a,c)=>a*31+c.charCodeAt(0),0)>>>0,pool=taskPool[game],first=hash%pool.length;return[['finishes',1,game==='tide'?'Complete a delivery':'Finish a race',200],pool[first],pool[(first+1)%pool.length]].map(([event,goal,label,reward],id)=>({id:`${day}:${id}`,event,goal,label,reward:Math.round(Math.round(Math.round(reward*.2)*.85)*.7)}));}
   function fresh(game){return{version:1,balance:0,earned:0,owned:[...C.games[game].starters],liveries:[],equipped:{vehicle:C.games[game].starters[0],paints:{}},daily:{date:dateKey(),progress:{},claimed:[]},events:[],bestTimes:{},lastDrop:null,remainder:0};}
   function normalize(game,data){
     const p=fresh(game);if(!data||typeof data!=='object')return p;
@@ -55,7 +55,7 @@
   function event(game,event,quantity=1,points=0,id){
     if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(points)||points<0)return{points:0,daily:0,total:0};
     const p=read(game);if(id&&p.events.includes(id))return{points:0,daily:0,total:0};if(id)p.events.push(id);
-    const scaled=points*.85+p.remainder;points=Math.floor(scaled+1e-9);p.remainder=Math.max(0,scaled-points);p.daily.progress[event]=Math.max(0,Number(p.daily.progress[event])||0)+quantity;
+    const scaled=points*.85*.7+p.remainder;points=Math.floor(scaled+1e-9);p.remainder=Math.max(0,scaled-points);p.daily.progress[event]=Math.max(0,Number(p.daily.progress[event])||0)+quantity;
     let daily=0;for(const task of tasks(game,p.daily.date))if(!p.daily.claimed.includes(task.id)&&(Number(p.daily.progress[task.event])||0)>=task.goal){p.daily.claimed.push(task.id);daily+=task.reward;}
     p.balance+=points+daily;p.earned+=points+daily;p.events=p.events.slice(-600);save(game,p);return{points,daily,total:points+daily};
   }

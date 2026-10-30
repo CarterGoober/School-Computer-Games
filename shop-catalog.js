@@ -12,7 +12,8 @@
    const item=items[mod(day,items.length)],vehicle=item.vehicle||item.id;
    const games=Object.keys(C.games).filter(g=>C.games[g].models.includes(vehicle));
    const game=games[mod(Math.floor(day/items.length),games.length)];
-   const price=C.packages[item.rarity][type]*({rare:4,legendary:5,ultra:6}[item.rarity]);
+   // Direct prices are independent of package prices, so their increases do not compound.
+   const price={vehicle:{rare:4800,legendary:18000,ultra:57600},livery:{rare:2400,legendary:9000,ultra:32400}}[type][item.rarity];
    return {id:`${day}:${type}:${game}:${item.id}`,day,game,type,item,vehicle,rarity:item.rarity,price};
   });
   return {day,date:new Date(day*DAY).toISOString().slice(0,10),endsAt:(day+1)*DAY,offers};

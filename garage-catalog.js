@@ -38,7 +38,7 @@
   const liveries=Object.entries(designs).flatMap(([vehicle,rows],vi)=>rows.map(([name,pattern,body,accent,detail],i)=>({id:`${vehicle}-${tiers[i]}`,vehicle,name,pattern,body,accent,detail,rarity:tiers[i],seed:vi*11+i*29+7,kind:'livery'})));
   const paints=Object.fromEntries(liveries.map(p=>[p.id,p]));
   const games={apex:{name:'Apex Circuit',currency:'Garage Points',models:['apex',...newVehicles.map(v=>v.id)],starters:['apex']},drift:{name:'Sunday Slide',currency:'Garage Points',models:['coupe','truck','train','sf90',...newVehicles.map(v=>v.id)],starters:['coupe','truck','train','sf90']},tide:{name:'Tideline',currency:'Garage Points',models:['cargo','cruise'],starters:['cargo','cruise']}};
-  const packages={rare:{name:'Rare',color:'#63ce9a',odds:[.85,.14,.01],vehicle:600,livery:300},legendary:{name:'Legendary',color:'#f6c65b',odds:[.25,.65,.10],vehicle:1800,livery:900},ultra:{name:'Ultra',color:'#d397ff',odds:[.05,.30,.65],vehicle:4800,livery:2700}};
+  const packages={rare:{name:'Rare',color:'#63ce9a',odds:[.85,.14,.01],vehicle:900,livery:450},legendary:{name:'Legendary',color:'#f6c65b',odds:[.25,.65,.10],vehicle:2700,livery:1350},ultra:{name:'Ultra',color:'#d397ff',odds:[.05,.30,.65],vehicle:7200,livery:4050}};
   const api={tiers,newVehicles,models,liveries,paints,games,packages};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GarageCatalog=api;
 })(typeof window!=='undefined'?window:globalThis);

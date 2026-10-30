@@ -19,9 +19,9 @@ const base=process.env.TEST_BASE_URL||'http://127.0.0.1:8000';
  await page.click('#feedback-form [type=submit]');await page.waitForFunction(()=>document.querySelector('#feedback-status').textContent.includes('draft is still here'));assert.equal(await page.inputValue('[name=message]'),'This is a local browser test only.');
  await page.reload();assert.equal(await page.inputValue('[name=title]'),'Local fixture');submitMode='unconfirmed';await page.click('#feedback-form [type=submit]');await page.waitForFunction(()=>document.querySelector('#feedback-status').textContent.includes('did not confirm'));assert.equal(submitted[0].p_id,submitted[1].p_id);
  submitMode='success';await page.click('#feedback-form [type=submit]');await page.waitForFunction(()=>document.querySelector('#feedback-status').textContent.startsWith('Posted.'));assert.equal(await page.inputValue('[name=message]'),'');assert.equal(submitted[0].p_id,submitted[2].p_id);
- await page.evaluate(()=>{Progression.event('apex','browser-test',1,1000);});assert.match(await page.locator('.hub-shared-wallet').innerText(),/850 GARAGE POINTS/);
+ await page.evaluate(()=>{Progression.event('apex','browser-test',1,1000);});assert.match(await page.locator('.hub-shared-wallet').innerText(),/595 GARAGE POINTS/);
  for(const game of ['apex','drift','tide']){
-  await page.goto(base+'/'+game+'.html');await page.waitForSelector('.p-wallet');await page.click('.p-wallet');assert.match(await page.locator('.g-balance').innerText(),/850/);assert.match(await page.locator('.g-balance').innerText(),/Garage Points/);await page.click('.g-close');assert.equal(await page.locator('canvas').count()>0,true);
+  await page.goto(base+'/'+game+'.html');await page.waitForSelector('.p-wallet');await page.click('.p-wallet');assert.match(await page.locator('.g-balance').innerText(),/595/);assert.match(await page.locator('.g-balance').innerText(),/Garage Points/);await page.click('.g-close');assert.equal(await page.locator('canvas').count()>0,true);
  }
  await page.goto(base+'/basketball.html');
  // Observe the real simulation through wrappers injected by the test only.
