@@ -2,15 +2,16 @@
   'use strict';
   const C=typeof module!=='undefined'&&module.exports?require('./garage-catalog.js'):root.GarageCatalog;
   const rewardRates=Object.freeze({raceFinish:70,raceBest:44,jump:9,driftSecond:2,load:4,perfectLoad:24,pirate:14,restart:8,rescue:20,voyageFinish:80,voyageBest:40});
-  const memory={},writeFailed={},clamp=(n,a,b)=>Math.max(a,Math.min(b,n));let serial=0,storageOK=true;
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));let serial=0,storageOK=true,walletMemory=null,walletWriteFailed=false;
+  const WALLET_KEY='afterclass-garage-v2';
   function dateKey(now=new Date()){return`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;}
   const taskPool={
     apex:[['checkpoints',4,'Pass 4 checkpoints',120],['distance',800,'Drive 800 meters',140],['best',1,'Beat a personal best',220],['finishes',2,'Finish 2 races',260]],
     drift:[['driftSeconds',10,'Hold drifts for 10 seconds total',180],['jumps',2,'Hit 2 jumps',160],['checkpoints',4,'Pass 4 checkpoints',120],['best',1,'Beat a personal best',220]],
     tide:[['loads',6,'Load 6 cargo containers',180],['pirates',2,'Repel 2 pirate boats',180],['restarts',1,'Restart a cruise engine',160],['rescues',1,'Rescue a passenger',180],['perfectLoads',2,'Make 2 perfect cargo placements',220]]
   };
-  function tasks(game,day=dateKey()){const hash=[...day].reduce((a,c)=>a*31+c.charCodeAt(0),0)>>>0,pool=taskPool[game],first=hash%pool.length;return[['finishes',1,game==='tide'?'Complete a delivery':'Finish a race',200],pool[first],pool[(first+1)%pool.length]].map(([event,goal,label,reward],id)=>({id:`${day}:${id}`,event,goal,label,reward:Math.round(reward*.2)}));}
-  function fresh(game){return{version:1,balance:0,earned:0,owned:[...C.games[game].starters],liveries:[],equipped:{vehicle:C.games[game].starters[0],paints:{}},daily:{date:dateKey(),progress:{},claimed:[]},events:[],bestTimes:{},lastDrop:null};}
+  function tasks(game,day=dateKey()){const hash=[...day].reduce((a,c)=>a*31+c.charCodeAt(0),0)>>>0,pool=taskPool[game],first=hash%pool.length;return[['finishes',1,game==='tide'?'Complete a delivery':'Finish a race',200],pool[first],pool[(first+1)%pool.length]].map(([event,goal,label,reward],id)=>({id:`${day}:${id}`,event,goal,label,reward:Math.round(Math.round(reward*.2)*.85)}));}
+  function fresh(game){return{version:1,balance:0,earned:0,owned:[...C.games[game].starters],liveries:[],equipped:{vehicle:C.games[game].starters[0],paints:{}},daily:{date:dateKey(),progress:{},claimed:[]},events:[],bestTimes:{},lastDrop:null,remainder:0};}
   function normalize(game,data){
     const p=fresh(game);if(!data||typeof data!=='object')return p;
     for(const key of ['balance','earned'])if(Number.isSafeInteger(data[key])&&data[key]>=0)p[key]=data[key];
@@ -19,17 +20,42 @@
     if(p.owned.includes(data.equipped?.vehicle))p.equipped.vehicle=data.equipped.vehicle;
     for(const id of p.owned){const paint=data.equipped?.paints?.[id];if(p.liveries.includes(paint)&&C.paints[paint].vehicle===id)p.equipped.paints[id]=paint;}
     if(data.daily?.date===dateKey())p.daily={date:data.daily.date,progress:{...(data.daily.progress||{})},claimed:Array.isArray(data.daily.claimed)?data.daily.claimed:[]};
+    if(Number.isFinite(data.remainder)&&data.remainder>=0&&data.remainder<1)p.remainder=data.remainder;
     p.events=(Array.isArray(data.events)?data.events:[]).filter(x=>typeof x==='string').slice(-600);
     if(data.bestTimes&&typeof data.bestTimes==='object')for(const [k,v]of Object.entries(data.bestTimes))if(Number.isFinite(v)&&v>0)p.bestTimes[k]=v;
     if(data.lastDrop&&(C.models[data.lastDrop.item?.id]||C.paints[data.lastDrop.item?.id]))p.lastDrop=data.lastDrop;
     return p;
   }
-  function read(game){if(!C.games[game])throw Error('Unknown game');let raw=memory[game];try{if(typeof localStorage!=='undefined'&&!writeFailed[game]){const saved=localStorage.getItem(`afterclass-progress-${game}`);if(saved)raw=JSON.parse(saved);}}catch{storageOK=false;}return normalize(game,raw);}
-  function save(game,p){memory[game]=p;try{if(typeof localStorage!=='undefined')localStorage.setItem(`afterclass-progress-${game}`,JSON.stringify(p));}catch{storageOK=false;writeFailed[game]=true;}if(typeof root.dispatchEvent==='function'&&typeof CustomEvent!=='undefined')root.dispatchEvent(new CustomEvent('garage:updated',{detail:{game,balance:p.balance}}));return p;}
+  // One storage record commits wallet and collections together. Legacy keys remain intact.
+  function wallet(){
+    if(!walletWriteFailed&&typeof localStorage!=='undefined'){
+      try{
+        const raw=localStorage.getItem(WALLET_KEY);
+        if(raw){const w=JSON.parse(raw);if(w.version!==2||!Number.isSafeInteger(w.balance)||w.balance<0||!w.profiles)throw Error('Invalid wallet');walletMemory=w;return w;}
+        if(!walletMemory){
+          const profiles={};let balance=0;
+          for(const game of Object.keys(C.games)){
+            const old=localStorage.getItem(`afterclass-progress-${game}`);
+            // Never persist an incomplete migration when an existing save cannot be read.
+            const profile=old?JSON.parse(old):fresh(game);profiles[game]=profile;
+            if(Number.isSafeInteger(profile.balance)&&profile.balance>=0)balance+=profile.balance;
+          }
+          if(!Number.isSafeInteger(balance))throw Error('Wallet too large');
+          walletMemory={version:2,balance,profiles};
+          persistWallet(walletMemory);
+        }
+      }catch{storageOK=false;walletWriteFailed=true;}
+    }
+    if(!walletMemory)walletMemory={version:2,balance:0,profiles:{}};
+    return walletMemory;
+  }
+  function persistWallet(w){walletMemory=w;try{if(typeof localStorage!=='undefined'&&!walletWriteFailed)localStorage.setItem(WALLET_KEY,JSON.stringify(w));}catch{storageOK=false;walletWriteFailed=true;}}
+  function read(game){if(!C.games[game])throw Error('Unknown game');const w=wallet(),p=normalize(game,w.profiles[game]);p.balance=w.balance;return p;}
+  function save(game,p){const w=wallet();w.balance=p.balance;w.profiles[game]=p;persistWallet(w);if(typeof root.dispatchEvent==='function'&&typeof CustomEvent!=='undefined')root.dispatchEvent(new CustomEvent('garage:updated',{detail:{game,balance:w.balance}}));return p;}
   function event(game,event,quantity=1,points=0,id){
     if(!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(points)||points<0)return{points:0,daily:0,total:0};
     const p=read(game);if(id&&p.events.includes(id))return{points:0,daily:0,total:0};if(id)p.events.push(id);
-    points=Math.round(points);p.daily.progress[event]=Math.max(0,Number(p.daily.progress[event])||0)+quantity;
+    const scaled=points*.85+p.remainder;points=Math.floor(scaled+1e-9);p.remainder=Math.max(0,scaled-points);p.daily.progress[event]=Math.max(0,Number(p.daily.progress[event])||0)+quantity;
     let daily=0;for(const task of tasks(game,p.daily.date))if(!p.daily.claimed.includes(task.id)&&(Number(p.daily.progress[task.event])||0)>=task.goal){p.daily.claimed.push(task.id);daily+=task.reward;}
     p.balance+=points+daily;p.earned+=points+daily;p.events=p.events.slice(-600);save(game,p);return{points,daily,total:points+daily};
   }
@@ -54,7 +80,7 @@
     run.previous={x:car.x,z:car.z};if(run.distance>=50){const n=Math.floor(run.distance/50)*50;earn(run,'distance',n,0);run.distance-=n;}
     if(car.nextCheckpoint>run.checkpoints){earn(run,'checkpoints',car.nextCheckpoint-run.checkpoints,0);run.checkpoints=car.nextCheckpoint;}
     if((car.jumps||0)>run.jumps){earn(run,'jumps',car.jumps-run.jumps,(car.jumps-run.jumps)*rewardRates.jump);run.jumps=car.jumps;}
-    if(run.game==='drift'&&!car.airborne&&car.driftAngle>.13&&Math.abs(car.speed)>8){run.drift+=dt;if(run.drift>=1){const n=Math.floor(run.drift);earn(run,'driftSeconds',n,n*rewardRates.driftSecond);run.drift-=n;}}else run.drift=0;
+    if(run.game==='drift'&&!car.airborne&&car.driftAngle>.13&&Math.abs(car.speed)>8){run.drift+=dt;if(run.drift>=1){const n=Math.floor(run.drift);earn(run,'driftSeconds',n,n*rewardRates.driftSecond);run.drift-=n;}}
   }
   function updateBoat(run,s){
     if(!run||run.done)return;const mult={easy:1,medium:1.5,hard:2.2}[s.difficulty]||1;

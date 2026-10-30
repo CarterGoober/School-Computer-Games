@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Afterclass Garage",
   "short_name": "Garage",
-  "description": "Three original offline games: Tideline, Sunday Slide, and Apex Circuit.",
+  "description": "Four original offline games: Tideline, Sunday Slide, Apex Circuit, and Rooftop Rumble.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

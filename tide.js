@@ -29,7 +29,7 @@ function pause() { if (mode !== 'playing') return; setMode('paused'); $('#resume
 function resume() { if (mode !== 'paused') return; setMode('playing'); canvas.focus(); }
 function menu() { setMode('menu');document.querySelector(`[data-vessel="${Progression.read('tide').equipped.vehicle}"]`).click(); $('#depart').focus(); }
 function finish() {
-  const earned=Progression.finishBoat(progressRun,voyage);$('#earned-points').textContent=earned?`+${earned.total.toLocaleString()} Tide points${earned.mult?' · '+earned.mult+'× mission rewards':''} · ${earned.daily} daily rewards${earned.cargoLost?' · −'+earned.cargoPenalty+' completion points ('+earned.cargoLost+' cargo lost)':''}`:'';
+  const earned=Progression.finishBoat(progressRun,voyage);$('#earned-points').textContent=earned?`+${earned.total.toLocaleString()} Garage Points${earned.mult?' · '+earned.mult+'× mission rewards':''} · ${earned.daily} daily rewards${earned.cargoLost?' · Reduced completion bonus: '+earned.cargoLost+' cargo lost':''}`:'';
   const won = voyage.stage === 'complete', key = `${vessel}-${difficulty}`;
   const old = Number.isFinite(records[key]) && records[key] > 0 ? records[key] : 0;
   let record = false;
