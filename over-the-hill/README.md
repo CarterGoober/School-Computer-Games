@@ -1,0 +1,98 @@
+# Over the Hill — Ashen Vale
+
+An original, peaceful 3D off-road game for Afterclass Garage. One enclosed classic-inspired Wren 88 wagon explores a continuous woodland/mountain loop, a lake, a shallow mountain river, four optional places, and scenic detours. There are no races, accounts, room codes, payments, or remote artwork.
+
+## Launch the complete garage and shared world
+
+Requires Node.js 18 or newer; no npm dependencies or build step.
+
+```sh
+cd School-Computer-Games
+node over-the-hill/server.cjs
+```
+
+Open **http://localhost:8001/** for the garage, or **http://localhost:8001/over-the-hill/** for the game. Press **PLAY**. Every browser using this server joins the same Ashen Vale automatically. On another device on your LAN, use this computer's address and port 8001; localhost on another device refers to that other device. The server must remain running. For installed/offline support outside localhost, use HTTPS.
+
+The game has been tested against a local running server, including two independent browser contexts. **No public production server is deployed by this repository change.** The homepage does not advertise LIVE/ONLINE availability. An actual connection must succeed before the game displays ONLINE. A static GitHub Pages deployment plays solo and reports the server unavailable; it cannot host the Node multiplayer server.
+
+For solo development, the original root command still works:
+
+```sh
+python3 -m http.server 8000 --bind 0.0.0.0
+```
+
+Open `/over-the-hill/`. After an online first visit caches v16, the game also plays solo offline. Multiplayer API requests bypass the service worker and are never cached.
+
+## Controls and flow
+
+- W / Up: accelerate. S / Down: brake moving forward, then reverse.
+- A / Left turns left; D / Right turns right. Steering reverses naturally while backing up.
+- Space: firm brake. R: recover to the nearest trail, facing its forward direction.
+- Escape / P or the gear button: pause/settings. Resume retries a failed server connection. Return to trailhead resets only the wagon; journal discoveries remain.
+- M or Map: optional field map and journal. C: close/wide chase camera.
+- Fullscreen button: browser fullscreen when permitted.
+- Touch: hold steering plus throttle/brake together; simultaneous pointers work. Canceled touches and focus loss clear inputs. Losing focus pauses driving.
+
+The small speed/gear display remains visible. Driving hints fade after 12 seconds of moving. Location captions fade in, hold approximately three seconds, then fade out for two seconds; staying within the same place does not retrigger them. The title appears only on the start/pause card. Optional engine sound starts off. Graphics cycle low/balanced/high; all levels adapt resolution under sustained load.
+
+## How multiplayer works
+
+`server.cjs` is a single authoritative world process. It serves the whole garage, accepts validated control inputs over same-origin HTTP POST, simulates vehicles at 60 Hz, and streams snapshots at 10 Hz over **Server-Sent Events**. This is real server synchronization, not simulated other drivers. Clients predict their own driving, reconcile position, interpolate remote vehicles, and show each connected explorer with a name and a distinct wagon color. Vehicles can pass through each other to keep exploration peaceful. There is no remote chat.
+
+Joining creates an opaque anonymous reconnect token. Rejoining with that token restores identity and position. Event-stream loss removes the vehicle from other clients; the browser retries the join automatically. Stale input brakes on the server after 400 ms. Leaving the browser clears inputs and stops its wagon. Disconnected sessions are retired after 30 seconds. The current capacity is 40 sessions, including recently disconnected sessions. This is not a load-tested concurrency guarantee.
+
+The deterministic landscape is the same for everyone. Player positions are atomically saved every five seconds and on orderly shutdown, and restored after a server restart. `WORLD_DATA` selects the save path; the default is `work/hill-world.json`. Keep that file/volume between deployments. A crash can lose up to five seconds of position. Discoveries remain local to each browser under `hill-journal-v1`; the reconnect token uses `hill-session-v1`. Existing Garage progress, currency, collections, tasks and records are not read or written by this game.
+
+## Deploy a public shared world
+
+1. Copy the **whole repository** to a host with a long-running Node.js process and a persistent disk. Serve this application at the domain root. Static-only/serverless function hosting is insufficient for the permanent simulation and event streams.
+2. Run exactly **one instance/replica** of `node over-the-hill/server.cjs`. Set `HOST=127.0.0.1`, `PORT=8001`, and `WORLD_DATA=/var/lib/afterclass/hill-world.json`; give the process user write access to that directory. Use systemd or the host's process supervisor to restart the process on failure. Do not create per-player instances.
+3. Put an HTTPS reverse proxy on the same hostname in front of the Node process, forwarding the entire garage. For nginx:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8001;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
+    proxy_cache off;
+    proxy_read_timeout 1h;
+}
+```
+
+4. Enable TLS using your host's certificate workflow. Preserve the persistent save file during redeployment. Keep one replica: multiple independent processes would create separate worlds.
+5. Check `https://YOUR-DOMAIN/over-the-hill/api/health`, then open two independent browsers at `/over-the-hill/`. Both should report two explorers and see the other wagon move. Test disconnect/rejoin and a process restart. Do this before advertising online availability.
+
+No custom client URL or lobby configuration is needed: clients connect to their current origin. The public host, HTTPS, cross-network latency, proxy behavior, and production capacity remain deployment validation tasks. A cross-origin multiplayer host is deliberately not configured.
+
+## Art, dynamics and performance
+
+All meshes, terrain, route layout, wagon details, props and materials are original code in this directory. The cover is an actual in-game capture. No Copilot Over the Hill implementation was present in the supplied Git checkout/history, so no previous implementation could be identified for deletion. No pre-existing tracked game or shared renderer was removed or reused. The repository at baseline `264d8ff` contained four playable game entries and the central shop; all remain intact.
+
+Terrain uses continuous height samples and shared vertex colors. Elevation, continuous slope normals, moisture and low-frequency noise blend grass, soil and rock; the terrain bypasses flat face shading. Light procedural surface detail is applied in the shader. Shared grid vertices receive identical colors at chunk boundaries. Props retain low-poly face lighting. The trail is subdivided, has blended shoulders, and clears its underlying terrain mesh. The distant ridges are original layered silhouettes, not fog masks over random terrain colors.
+
+The fixed-step simulation has four independent terrain contacts, damped heave, pitch and roll, speed-sensitive bicycle steering, slope forces, braking, reverse, collision clearance and bounded wheel travel. Tires keep a fixed radius and width; suspension changes their hub positions, never their scale. Physical and rendered wheel centers share compression/droop limits. This is a purpose-built lightweight off-road approximation, not a full rigid-body tire simulation.
+
+The standalone WebGL renderer uploads scenery to cached spatial GPU batches, culls cells by view/distance, limits fine ground detail to nearby cells, and uploads only moving vehicles each frame. Low/balanced/high cap pixel density at 0.6/0.85/1.25 and draw distances at 190/300/450 metres; distant backdrop silhouettes remain visible. Sustained slow frames reduce resolution automatically. Soft ground shadows use lightweight interpolated vertex colors rather than shadow maps. No external engines, CDNs or image requests are needed. Actual school Chromebook hardware has not been measured in this environment; headless Chromium software rendering is only a useful stress check.
+
+## Verification
+
+From the repository root:
+
+```sh
+node over-the-hill/test-physics.cjs
+node over-the-hill/test-world.cjs
+node over-the-hill/test-server.cjs
+# Start the server separately before these browser tests:
+node over-the-hill/test-browser.cjs
+node over-the-hill/test-visual.cjs
+```
+
+Browser tests require Playwright and Chromium, consistent with the existing repository tests. `TEST_BASE_URL` and `CHROMIUM_PATH` are supported by the multiplayer browser suite. Review screenshots are written to `work/hill-review/`; they are not player data. Tests use isolated browser profiles and never submit feedback to the live backend.
+
+Physics checks cover settling, acceleration, braking, reverse, actual left/right displacement, independent slope contacts, tire travel bounds and a long rough-ground run. A route follower drives the complete forest/mountain circuit with scenery collisions. Server tests cover authoritative inputs, snapshots, reconnect identity and disk persistence across restart. Browser tests cover two independent clients, visible remote movement, leave/rejoin/reconnect, real WASD/arrows and simultaneous touch steering, pause/reset, discovery persistence, graphics/camera options and responsive layouts. Visual checks cover shared terrain vertex colors, timed HUD fades, camera clearance, WebGL errors at five places, flagship placement, offline driving and the four original games offline.
+
+### Results in this checkout
+
+All five new suites passed against the local build. The two-client suite also exercises a silent event stream, page lifecycle reconnect, and parked pause/resume. All 13 existing simulation/economy suites passed, as did the existing `test-browser.cjs` garage/feedback/game/offline suite. `test-shop-browser.cjs` fails its iframe filter assertion at line 22 (`aria-pressed` is initially `false`); this same failure was reproduced against an untouched archive of baseline `264d8ff`. Shop implementation files are unchanged. The feedback database suite was not rerun: this change does not alter its schema or service.

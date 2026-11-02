@@ -1,8 +1,12 @@
 # Afterclass Garage
 
-An installable, offline game hub with four original games for land, sea, and the rooftop. All game assets are local, with no accounts or ads. Public feedback uses Supabase and requires an internet connection.
+An installable, offline game hub with five original games for land, sea, and the rooftop. All game assets are local, with no accounts or ads. Public feedback uses Supabase and requires an internet connection.
 
 ## Games
+
+**Over the Hill** (`over-the-hill/`) is the new lead feature: an original, peaceful 3D off-road expedition through autumn woods, a lake shore, a mountain river and rocky high country. The Wren 88 has independent, travel-limited suspension and keyboard/touch driving. Optional discoveries and a field map replace racing objectives. Terrain uses smooth shared vertex colors; the minimal HUD fades location captions and learned controls.
+
+For the complete garage with real shared-world multiplayer, run `node over-the-hill/server.cjs` and open `http://localhost:8001/`. PLAY connects everyone using that server to one authoritative world, with synchronized wagons, leave/rejoin/reconnect and persisted positions. No public multiplayer server has been deployed by this change. Static hosting and cached offline play run solo and show the unavailable connection honestly. Existing games, shop, records and Garage Points remain independent. See [`over-the-hill/README.md`](over-the-hill/README.md) for controls, architecture, persistence, public HTTPS hosting and tests.
 
 **Tideline** (`tide.html`): a side-view 2D boat game with layered coastal scenery, detailed ships, animated loading docks, buoyancy and hull pitch, sea spray, wakes, and passing waves. Choose a vessel and Easy, Medium, or Hard waters:
 
@@ -152,7 +156,7 @@ There are exactly two garage-wide featured offers each UTC day: one existing unl
 
 All prices are Garage Points. Featured purchases guarantee the pictured item for its labeled game and are disabled once owned. A direct livery offer can be bought before its vehicle: the confirmation explicitly says the vehicle is not included, the livery remains saved, and equipping waits until the vehicle is owned. Random cans still draw only from owned vehicles. Tideline has no vehicle boxes because both ships are starters. The economy adjustment doubles these direct prices independently of the 1.5× box/can increase, so the increases do not compound. Task structure, drop odds, and the two-thirds refund fraction remain unchanged. New gameplay and daily-task earnings are 30% lower.
 
-Daily rotation uses the **device clock**, even offline. Devices with the same correct UTC date see identical selections. Changing the clock changes the offers; there is no trusted server time or anti-cheat claim. Purchases/ownership are local to this browser, not account-synced. The shop and its queried in-game URL are cached by service worker v15 for offline browsing, purchases, reveals, and equipping.
+Daily rotation uses the **device clock**, even offline. Devices with the same correct UTC date see identical selections. Changing the clock changes the offers; there is no trusted server time or anti-cheat claim. Purchases/ownership are local to this browser, not account-synced. The shop and its queried in-game URL are cached by service worker v16 for offline browsing, purchases, reveals, and equipping.
 
 Central checkout uses Web Locks to serialize purchases across same-origin tabs, validates current funds/ownership/offer again, and stores the wallet, collection, and retry receipt in a single localStorage write. Repeated confirmations use the same transaction ID; the most recent 128 receipts survive reloads. The UI disables confirmation while pending and during the reveal. A failed durable write leaves the original wallet and collection intact and reports failure. Purchases require an HTTPS/localhost secure context and a current browser supporting Web Locks; unsupported browsers can still browse. This protects normal shop transactions, not deliberate edits to local saves.
 
