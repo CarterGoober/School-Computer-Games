@@ -1,3 +1,11 @@
+## Public game
+
+Play at https://afterclass-garage-ashen-vale.adoredcarat1.chatgpt.site/over-the-hill/ . The garage and a shared-world backend are deployed through Sites. The hosted backend uses Cloudflare Workers with durable D1 player positions, server-side simulation of validated inputs, atomic version checks, and snapshots every 150 ms. It advances the simulation on input requests; it does not require the development machine or a player host. All players use the same database and valley. The hosted capacity limit is 24 active sessions, not a load-tested guarantee. The original Node/SSE implementation below remains available for local or self-hosted use.
+
+Run `node hosting/build.cjs` to build the Worker artifact. `.openai/hosting.json` retains the Site identity and DB binding, and `drizzle/` contains the hosted schema migration. The deployment archive includes `dist/server/index.js`, `dist/.openai/hosting.json`, and `drizzle/`. Do not publish runtime saves or credentials. The optional `connection-check.html` page verifies real joins, server-simulated movement, snapshots, and reconnect without requiring WebGL.
+
+Existing saves on another website origin remain there: browser storage does not automatically transfer to this new address.
+
 # Over the Hill — Ashen Vale
 
 An original, peaceful 3D off-road game for Afterclass Garage. One enclosed classic-inspired Wren 88 wagon explores a continuous woodland/mountain loop, a lake, a shallow mountain river, four optional places, and scenic detours. There are no races, accounts, room codes, payments, or remote artwork.
@@ -13,7 +21,7 @@ node over-the-hill/server.cjs
 
 Open **http://localhost:8001/** for the garage, or **http://localhost:8001/over-the-hill/** for the game. Press **PLAY**. Every browser using this server joins the same Ashen Vale automatically. On another device on your LAN, use this computer's address and port 8001; localhost on another device refers to that other device. The server must remain running. For installed/offline support outside localhost, use HTTPS.
 
-The game has been tested against a local running server, including two independent browser contexts. **No public production server is deployed by this repository change.** The homepage does not advertise LIVE/ONLINE availability. An actual connection must succeed before the game displays ONLINE. A static GitHub Pages deployment plays solo and reports the server unavailable; it cannot host the Node multiplayer server.
+The game has been tested against a local running server, including two independent browser contexts. The public hosted alternative is linked above. The homepage does not advertise LIVE/ONLINE availability. An actual connection must succeed before the game displays ONLINE. A static GitHub Pages deployment plays solo and reports the server unavailable; it cannot host the Node multiplayer server.
 
 For solo development, the original root command still works:
 
