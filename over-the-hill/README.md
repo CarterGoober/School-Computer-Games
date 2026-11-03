@@ -8,7 +8,7 @@ Existing saves on another website origin remain there: browser storage does not 
 
 # Over the Hill — Ashen Vale
 
-An original, peaceful 3D off-road game for Afterclass Garage. One enclosed classic-inspired Wren 88 wagon explores a continuous woodland/mountain loop, a lake, a shallow mountain river, four optional places, and scenic detours. There are no races, accounts, room codes, payments, or remote artwork.
+An original, peaceful 3D off-road game for Afterclass Garage. One enclosed classic-inspired Wren 88 wagon explores a fixed 8 × 8 km watershed with eight regions, about 30 km of connected routes, 26 landmarks, five irregular lakes/ponds, and an Alder River crossing. There are no races, accounts, room codes, payments, or remote artwork.
 
 ## Launch the complete garage and shared world
 
@@ -21,7 +21,7 @@ node over-the-hill/server.cjs
 
 Open **http://localhost:8001/** for the garage, or **http://localhost:8001/over-the-hill/** for the game. Press **PLAY**. Every browser using this server joins the same Ashen Vale automatically. On another device on your LAN, use this computer's address and port 8001; localhost on another device refers to that other device. The server must remain running. For installed/offline support outside localhost, use HTTPS.
 
-The game has been tested against a local running server, including two independent browser contexts. The public hosted alternative is linked above. The homepage does not advertise LIVE/ONLINE availability. An actual connection must succeed before the game displays ONLINE. A static GitHub Pages deployment plays solo and reports the server unavailable; it cannot host the Node multiplayer server.
+The game has been tested against a local running server, including two independent browser contexts. The public hosted alternative is linked above. The homepage does not advertise LIVE/ONLINE availability. An actual connection must succeed before the game displays the person icon and real player count. A static GitHub Pages deployment plays solo and reports the server unavailable; it cannot host the Node multiplayer server.
 
 For solo development, the original root command still works:
 
@@ -29,7 +29,7 @@ For solo development, the original root command still works:
 python3 -m http.server 8000 --bind 0.0.0.0
 ```
 
-Open `/over-the-hill/`. After an online first visit caches v16, the game also plays solo offline. Multiplayer API requests bypass the service worker and are never cached.
+Open `/over-the-hill/`. After an online first visit caches v18, the game also plays solo offline. Multiplayer API requests bypass the service worker and are never cached.
 
 ## Controls and flow
 
@@ -37,7 +37,7 @@ Open `/over-the-hill/`. After an online first visit caches v16, the game also pl
 - A / Left turns left; D / Right turns right. Steering reverses naturally while backing up.
 - Space: firm brake. R: recover to the nearest trail, facing its forward direction.
 - Escape / P or the gear button: pause/settings. Resume retries a failed server connection. Return to trailhead resets only the wagon; journal discoveries remain.
-- M or Map: optional field map and journal. C: close/wide chase camera.
+- C: close/wide chase camera. There is no map, map button, compass, or permanent discovery overlay.
 - Fullscreen button: browser fullscreen when permitted.
 - Touch: hold steering plus throttle/brake together; simultaneous pointers work. Canceled touches and focus loss clear inputs. Losing focus pauses driving.
 
@@ -82,7 +82,7 @@ Terrain uses continuous height samples and shared vertex colors. Elevation, cont
 
 The fixed-step simulation has four independent terrain contacts, damped heave, pitch and roll, speed-sensitive bicycle steering, slope forces, braking, reverse, collision clearance and bounded wheel travel. Tires keep a fixed radius and width; suspension changes their hub positions, never their scale. Physical and rendered wheel centers share compression/droop limits. This is a purpose-built lightweight off-road approximation, not a full rigid-body tire simulation.
 
-The standalone WebGL renderer uploads scenery to cached spatial GPU batches, culls cells by view/distance, limits fine ground detail to nearby cells, and uploads only moving vehicles each frame. Low/balanced/high cap pixel density at 0.6/0.85/1.25 and draw distances at 190/300/450 metres; distant backdrop silhouettes remain visible. Sustained slow frames reduce resolution automatically. Soft ground shadows use lightweight interpolated vertex colors rather than shadow maps. No external engines, CDNs or image requests are needed. Actual school Chromebook hardware has not been measured in this environment; headless Chromium software rendering is only a useful stress check.
+The standalone WebGL renderer uploads scenery to cached spatial GPU batches, culls cells by view/distance, limits fine ground detail to nearby cells, and uploads only moving vehicles each frame. Low/balanced/high cap pixel density at 0.6/0.85/1.25 and near/middle draw distances at 900/1300/1700 metres; the coarse full-watershed horizon remains visible. Sustained slow frames reduce resolution automatically. Soft ground shadows use lightweight interpolated vertex colors rather than shadow maps. No external engines, CDNs or image requests are needed. Actual school Chromebook hardware has not been measured in this environment; headless Chromium software rendering is only a useful stress check.
 
 ## Verification
 
@@ -99,8 +99,22 @@ node over-the-hill/test-visual.cjs
 
 Browser tests require Playwright and Chromium, consistent with the existing repository tests. `TEST_BASE_URL` and `CHROMIUM_PATH` are supported by the multiplayer browser suite. Review screenshots are written to `work/hill-review/`; they are not player data. Tests use isolated browser profiles and never submit feedback to the live backend.
 
-Physics checks cover settling, acceleration, braking, reverse, actual left/right displacement, independent slope contacts, tire travel bounds and a long rough-ground run. A route follower drives the complete forest/mountain circuit with scenery collisions. Server tests cover authoritative inputs, snapshots, reconnect identity and disk persistence across restart. Browser tests cover two independent clients, visible remote movement, leave/rejoin/reconnect, real WASD/arrows and simultaneous touch steering, pause/reset, discovery persistence, graphics/camera options and responsive layouts. Visual checks cover shared terrain vertex colors, timed HUD fades, camera clearance, WebGL errors at five places, flagship placement, offline driving and the four original games offline.
+Physics checks cover settling, acceleration, braking, reverse, actual left/right displacement, independent slope contacts, tire travel bounds and a long rough-ground run. A route follower drives the complete forest/mountain circuit with scenery collisions. Server tests cover authoritative inputs, snapshots, reconnect identity and disk persistence across restart. Browser tests cover two independent clients, visible remote movement, leave/rejoin/reconnect, real WASD/arrows and simultaneous touch steering, pause/reset, discovery persistence, graphics/camera options and responsive layouts. Visual checks cover shared terrain vertex colors, timed HUD fades, camera clearance, WebGL errors at seven places, flagship placement, offline driving and the four original games offline.
 
 ### Results in this checkout
 
 All five new suites passed against the local build. The two-client suite also exercises a silent event stream, page lifecycle reconnect, and parked pause/resume. All 13 existing simulation/economy suites passed, as did the existing `test-browser.cjs` garage/feedback/game/offline suite. `test-shop-browser.cjs` fails its iframe filter assertion at line 22 (`aria-pressed` is initially `false`); this same failure was reproduced against an untouched archive of baseline `264d8ff`. Shop implementation files are unchanged. The feedback database suite was not rerun: this change does not alter its schema or service.
+
+## Fixed watershed and surface interactions
+
+See `docs/ashen-vale-geography.md` for the authored regional plan. The geographic bounds cover 64 km²; the deliberate content consists of the connected 30 km road network and 26 landmark clusters, with deterministic wilderness dressing between them. This is finite terrain, not an infinite generator. All first-time sessions start at (0,0), north-facing. Existing reconnect identities, positions, discovery indices and Garage saves are retained.
+
+The client streams 128 m cells with 8 m near terrain and 32 m distant terrain, plus a coarse full-watershed horizon. Shared-coordinate colors and gradient lighting avoid triangle color seams. Near scenery is batched per cell; lighter distant groves fill the middle distance. GPU buffers and collision caches are bounded and discarded outside the active area. Graphics settings control distance and detail; resolution adapts to frame time.
+
+Stillwater, Mirrorfen, Southwind Mere, Alder Pool and the Three Sisters tarn have authored irregular shorelines, graded sand banks and shallow beds. The Alder River descends south, with a timber crossing and a rock cascade. Water uses depth-based transparency, animated highlights, a cheap sky-reflection approximation and shoreline foam. It does not render ray-traced or full scene reflections.
+
+Server and client use identical wheel-depth, chassis-immersion, traction, drag and bounded buoyancy calculations. Dry sand has greater rolling resistance than wet sand; gravel permits mild steering slip. Deeper water gradually reduces propulsion and steering authority. R recovers onto the nearest route. Tire ripples, splashes and fading sand impressions are bounded local effects derived from synchronized vehicles; no fluid simulation or extra effect network packets are used.
+
+Validation commands: `node over-the-hill/test-water.cjs`, `node over-the-hill/test-watershed.cjs`, `node over-the-hill/test-physics.cjs`, then the browser and visual suites with the server running. The visual suite drives more than 6 km through streamed cells in Chromium after inspecting seven locations. Physical Chromebook frame rates, 24-player load and long-duration Internet latency remain device/deployment checks, not guarantees.
+
+The expanded-world inspection recorded approximately 13–38 FPS using headless Chromium’s CPU-based SwiftShader renderer at seven locations. Dense forest is the heaviest scene; these figures are not measurements of Chromebook hardware. The Node and Worker/D1-preview two-client suites both passed. The offline suite checks the featured Garage link, preserved old game links, and the cached new world launching solo.

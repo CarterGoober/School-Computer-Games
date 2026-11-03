@@ -1,0 +1,9 @@
+'use strict';const assert=require('node:assert/strict'),P=require('./physics.js'),W=require('./world.js');
+const kinds=new Set();let maxDepth=0,maxVy=0;
+function drive(x,z,heading,seconds,obstacles=[]){const s=P.spawn(W.height,x,z,heading);for(let t=0;t<seconds*60;t++){P.step(s,{up:true},1/60,W.height,obstacles);const sf=W.surface(s.x,s.z);kinds.add(sf.kind);maxDepth=Math.max(maxDepth,sf.depth);if(sf.shore<35)maxVy=Math.max(maxVy,Math.abs(s.vy));assert([s.x,s.y,s.z,s.speed,s.roll,s.pitch].every(Number.isFinite));assert(s.y>=W.height(s.x,s.z)-.05);for(const w of s.wheels)assert(w.waterDepth>=0);assert(Math.abs(s.roll)<.6);}return s;}
+// Enter and leave a real fixed basin, from the eastern dry approach through its shallow central bed.
+let car=drive(-690,500,-Math.PI/2,1050);console.log('Lake crossing end',car.x.toFixed(1),W.surface(car.x,car.z).kind);assert(car.x<-1540,'crosses the lake and reaches western beach');assert(kinds.has('sand')&&kinds.has('wet sand')&&kinds.has('water'),'continuous dry/wet/submerged surface transitions');
+const z=2200,rx=-950+Math.sin(z*.0009)*310+Math.sin(z*.0021)*85;car=drive(rx-55,z,Math.PI/2,40);assert(car.x>rx+30,'river crossing and exit');
+const flat=()=>0;function speed(surface){flat.surface=()=>surface;const s=P.spawn(flat);for(let i=0;i<600;i++)P.step(s,{up:true},1/60,flat);return s.speed;}
+const grass=speed({depth:0,grip:1,resistance:.16}),sand=speed({depth:0,grip:.74,resistance:.48}),water=speed({depth:1,grip:1,resistance:.16});assert(grass>sand&&sand>water,'surface resistance and immersion affect actual speed');assert(maxDepth>1&&maxDepth<2);assert(maxVy<3,'water produces no vertical launches');
+for(const l of W.lakes){assert(W.waterAt(l.x,l.z).depth>.4);assert(W.waterAt(l.x+l.rx*2,l.z).depth<.01);}console.log('PASS five fixed basins, per-wheel depth, dry/wet sand, lake entry/exit, river crossing, stable buoyancy; speeds', {grass,sand,water,maxDepth,maxVy});

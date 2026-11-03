@@ -169,3 +169,7 @@ TEST_BASE_URL=http://127.0.0.1:8000 node test-shop-browser.cjs
 ```
 
 `test-shop.cjs` covers 900 UTC rotations, yesterday avoidance, exact premium prices, contents/odds, insufficient funds, duplicate refunds, guaranteed ownership, stale offers, simultaneous confirmations/contexts, storage failure, equipment, reloads, unowned-vehicle livery retention, and preserved claims/records/earnings. The Chromium suite tests actual desktop/Chromebook/touch layouts, filters and previews, purchases and reveals, in-game equipping and return links, simultaneous tabs, midnight expiration, persistence, and offline purchases including the embedded query URL. All points and saves used by browser tests belong to isolated local test profiles. Supabase requests are blocked; no live feedback is submitted. Screenshots default to `/tmp/central-shop-review` (`SHOP_SCREENSHOTS` can override).
+
+### Over the Hill: fixed watershed and shallow water
+
+The featured game now uses one fixed 8 × 8 km watershed, about 30 km of connected scenic routes, eight regions and 26 discoveries. Five authored lakes/ponds and a downhill river share the same terrain and surface physics on every client and server. Sand, gravel and water affect driving; shallow-water ripples and splashes follow synchronized wagons. The map HUD has been removed. See [the game guide](over-the-hill/README.md) for launch/hosting instructions and [the geography plan](docs/ashen-vale-geography.md) for the fixed layout and streaming approach. Existing games and Garage storage keys are unchanged.

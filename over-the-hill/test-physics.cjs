@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict');
 const P=require('./physics.js');
-assert.equal(typeof P.step,'function');
+assert.equal(typeof P.step,'function');assert.equal(Object.assign({motionHeading:2},P.spawn(()=>0,0,0,-1)).motionHeading,-1,'recovery resets lateral travel direction on both server implementations');
 const flat=()=>0;
 let s=P.spawn(flat,0,0,0);
 for(let i=0;i<600;i++)P.step(s,{},1/120,flat,[]);
