@@ -3,7 +3,11 @@
 'use strict';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function contacts(s,height){const sn=Math.sin(s.heading),cs=Math.cos(s.heading);return [[-1,1.65],[1,1.65],[-1,-1.65],[1,-1.65]].map(([x,z])=>{const wx=s.x+x*cs+z*sn,wz=s.z+z*cs-x*sn;return{x:wx,z:wz,y:height(wx,wz)+.48,lx:x,lz:z};});}
-function spawn(height,x=0,z=0,heading=0){const s={x,z,heading,motionHeading:heading,speed:0,steer:0,y:height(x,z)+.86,vy:0,pitch:0,pitchV:0,roll:0,rollV:0,travel:0,wheelSpin:0};s.wheels=contacts(s,height);limitTravel(s);return s;}
+function spawn(height,x=0,z=0,heading=0){const s={x,z,heading,motionHeading:heading,speed:0,steer:0,y:height(x,z)+.86,vy:0,pitch:0,pitchV:0,roll:0,rollV:0,travel:0,wheelSpin:0};s.wheels=contacts(s,height);const w=s.wheels;
+ s.pitch=clamp(Math.atan2((w[0].y+w[1].y-w[2].y-w[3].y)/2,3.3),-.55,.55);
+ s.roll=clamp(Math.atan2((w[1].y+w[3].y-w[0].y-w[2].y)/2,2),-.5,.5);
+ s.y=w.reduce((sum,w)=>sum+w.y,0)/4+.38;
+ limitTravel(s);return s;}
 function spring(s,k,target,dt,stiff,damp){const v=k+'V';s[v]+=(stiff*(target-s[k])-damp*s[v])*dt;s[k]+=s[v]*dt;}
 function limitTravel(s){for(const w of s.wheels){w.groundY=w.y;const anchor=s.y-.35+w.lz*Math.sin(s.pitch)+w.lx*Math.sin(s.roll);w.y=clamp(w.y,anchor-.27,anchor+.24);}}
 function step(s,input,dt,height,obstacles=[]){
@@ -22,12 +26,31 @@ function step(s,input,dt,height,obstacles=[]){
  s.speed=clamp(s.speed+accel*dt,-5.5,15.5);s.speed*=Math.exp(-(terrain.resistance+.012*Math.abs(s.speed)+Math.min(2.2,depth*.85))*dt);
  const yaw=s.speed*Math.tan(s.steer)/3.3*terrain.grip/(1+depth*.18);s.heading+=yaw*dt;
  const oldX=s.x,oldZ=s.z;const previous=Number.isFinite(s.motionHeading)?s.motionHeading:s.heading;s.motionHeading=previous+Math.atan2(Math.sin(s.heading-previous),Math.cos(s.heading-previous))*(1-Math.exp(-dt*(12*terrain.grip)/(1+depth*.4)));s.x+=Math.sin(s.motionHeading)*s.speed*dt;s.z+=Math.cos(s.motionHeading)*s.speed*dt;
- for(const o of (typeof obstacles==='function'?obstacles(s.x,s.z):obstacles)){const dx=s.x-o.x,dz=s.z-o.z,rx=(o.rx||o.r)+1.25,rz=(o.rz||o.r)+1.25,d=Math.hypot(dx/rx,dz/rz);if(d<1){s.x=o.x+(d>1e-6?dx/d:rx);s.z=o.z+(d>1e-6?dz/d:0);s.speed*=.3;}}
+ // Sweep each small step against solid scenery. An overlapping saved position
+ // gets a bounded outward nudge, never a projection across an entire boulder.
+ let separationBudget=.8*dt;
+ for(const o of (typeof obstacles==='function'?obstacles(s.x,s.z):obstacles)){
+  const rx=(o.rx||o.r)+1.25,rz=(o.rz||o.r)+1.25;
+  let dx=s.x-o.x,dz=s.z-o.z,d=Math.hypot(dx/rx,dz/rz);
+  if(d>=1)continue;
+  const before=Math.hypot((oldX-o.x)/rx,(oldZ-o.z)/rz);
+  if(before>=1){
+   const nx=(oldX-o.x)/(rx*rx),nz=(oldZ-o.z)/(rz*rz),length=Math.hypot(nx,nz),ux=nx/length,uz=nz/length;
+   const mx=s.x-oldX,mz=s.z-oldZ,inward=Math.min(0,mx*ux+mz*uz);
+   s.x=oldX+mx-ux*inward;s.z=oldZ+mz-uz*inward;
+   s.speed*=.9;continue;
+  }
+  if(d<before){s.x=oldX;s.z=oldZ;s.speed*=.15;dx=s.x-o.x;dz=s.z-o.z;d=before;}
+  const nx=d>1e-6?dx/(rx*rx):1,nz=d>1e-6?dz/(rz*rz):0,n=Math.hypot(nx,nz);
+  const push=Math.min(separationBudget,(1-d)*Math.min(rx,rz)+.001);
+  s.x+=nx/n*push;s.z+=nz/n*push;separationBudget-=push;
+ }
+
  const boundary=4000;if(Math.abs(s.x)>boundary||s.z<-2000||s.z>6000){s.x=oldX;s.z=oldZ;s.speed*=-.15;}
  s.wheels=contacts(s,height);for(const wheel of s.wheels)wheel.waterDepth=height.surface?height.surface(wheel.x,wheel.z).depth:0;const w=s.wheels,mean=w.reduce((a,v)=>a+v.y,0)/4;
  s.vy+=(52*(mean+.38+Math.min(.22,depth*.12)-s.y)-11*s.vy)*dt;s.y+=s.vy*dt;
  // Limit bottom-out while allowing travel and damped rebound over rough ground.
- const floor=Math.max(...w.map(v=>v.y))-.01;if(s.y<floor){s.y=floor;s.vy=Math.max(0,s.vy);}
+ const floor=Math.max(...w.map(v=>v.y+.11-v.lz*Math.sin(s.pitch)-v.lx*Math.sin(s.roll)));if(s.y<floor){s.y=floor;s.vy=Math.max(0,s.vy);}
  spring(s,'pitch',clamp(Math.atan2((w[0].y+w[1].y-w[2].y-w[3].y)/2,3.3)-accel*.007,-.55,.55),dt,48,10);
  spring(s,'roll',clamp(Math.atan2((w[1].y+w[3].y-w[0].y-w[2].y)/2,2)-yaw*s.speed*.012,-.5,.5),dt,55,11);
  limitTravel(s);s.travel+=Math.abs(s.speed)*dt;s.wheelSpin+=s.speed*dt/.48;
