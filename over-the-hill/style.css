@@ -6,3 +6,5 @@ header{background:none;pointer-events:none;padding:18px 22px}header a,header but
 
 /* Warm afternoon illumination over cool, clear mountain air. */
 #world{background:radial-gradient(circle at 28% 18%,#fff8da 0%,#fff0c1 3%,#f3e1b366 13%,transparent 33%),linear-gradient(#86b4d0,#c8d9ce 55%,#d8d4ae)}
+
+#world{touch-action:none}#spawn-choices{border:0;padding:0;margin:16px 0}#spawn-choices legend{font:11px system-ui;margin-bottom:8px}.spawn-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.spawn-grid button{padding:0 0 9px;min-width:0;text-align:left;overflow:hidden;border:2px solid transparent;background:#e4e2d4}.spawn-grid button[aria-pressed=true]{border-color:#576d50;background:#d9dfcb}.spawn-grid img{display:block;width:100%;aspect-ratio:1.7;object-fit:cover}.spawn-grid b,.spawn-grid small{display:block;margin:7px 6px 0;line-height:1.3}.spawn-grid b{font-size:10px}.spawn-grid small{font-size:8px}.menu-garage{display:block;font-size:11px;margin:12px 0}#menu .menu-paper{max-height:95dvh;overflow:auto}#spawn-choices[hidden]{display:none}@media(max-width:500px){.spawn-grid{gap:4px}.spawn-grid b{font-size:9px}.spawn-grid small{font-size:8px}}

@@ -56,6 +56,8 @@ const route=[];
 for(let road=0;road<roads.length;road++){const knots=roads[road];for(let k=0;k<knots.length-1;k++){const a=knots[Math.max(0,k-1)],b=knots[k],c=knots[k+1],d=knots[Math.min(knots.length-1,k+2)],count=Math.ceil(Math.hypot(c[0]-b[0],c[1]-b[1])/8);for(let i=0;i<count;i++){const t=i/count,t2=t*t,t3=t2*t,v=j=>.5*(2*b[j]+(-a[j]+c[j])*t+(2*a[j]-5*b[j]+4*c[j]-d[j])*t2+(-a[j]+3*b[j]-3*c[j]+d[j])*t3),x=v(0),z=v(1);route.push({x,z,y:base(x,z),road,end:i===count-1&&k===knots.length-2});}}}
 const bins=new Map();route.forEach((p,i)=>{const bx=Math.floor(p.x/64),bz=Math.floor(p.z/64);for(let x=bx-1;x<=bx+1;x++)for(let z=bz-1;z<=bz+1;z++){const key=x+','+z;if(!bins.has(key))bins.set(key,[]);bins.get(key).push(i);}});
 function nearest(x,z,full=false){let dist=Infinity,result=null,roadWeight=0,roadHeight=0;const ids=full?route.map((_,i)=>i):bins.get(Math.floor(x/64)+','+Math.floor(z/64))||[];for(const i of ids){const a=route[i],b=route[i+1];if(!b||a.road!==b.road)continue;const dx=b.x-a.x,dz=b.z-a.z,t=clamp(((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz),0,1),px=a.x+dx*t,pz=a.z+dz*t,d=(x-px)**2+(z-pz)**2;if(a.road>=5&&d<900){const w=Math.exp(-d/30);roadWeight+=w;roadHeight+=mix(a.y,b.y,t)*w;}if(d<dist){dist=d;result={x:px,z:pz,y:mix(a.y,b.y,t),heading:Math.atan2(dx,dz),i};}}return result?{...result,surfaceY:roadWeight>1e-12?roadHeight/roadWeight:result.y,distance:Math.sqrt(dist)}:{distance:Infinity};}
+const spawnIds=['forest','ridge','beach'];
+function spawnPoint(id){if(id==='forest')return{x:0,z:0,heading:0};if(id==='beach')return{x:-1550,z:500,heading:Math.PI/2};if(id==='ridge'){const points=route.filter(p=>p.road===6),start=Math.floor(points.length*.75);for(let i=start;i<points.length-2;i++){const p=points[i],next=points[i+1],heading=Math.atan2(next.x-p.x,next.z-p.z),sn=Math.sin(heading),cs=Math.cos(heading),grade=Math.abs(height(p.x+sn*1.7,p.z+cs*1.7)-height(p.x-sn*1.7,p.z-cs*1.7)),cross=Math.abs(height(p.x+cs,p.z-sn)-height(p.x-cs,p.z+sn));if(grade<.5&&cross<.4)return{x:p.x,z:p.z,heading};}const p=points.at(-3),n=points.at(-2);return{x:p.x,z:p.z,heading:Math.atan2(n.x-p.x,n.z-p.z)};}return null;}
 // Fixed optional rock-crawl spurs. Shelves are part of the collision heightfield,
 // not decorative solid boxes placed across a road. Existing road layout is retained.
 const rockTrails=[
@@ -183,6 +185,6 @@ function vehicle(s,variant=0){if(typeof window!=='undefined'&&window.HillEngine)
  const spare=transform([0,1.02,-2.35]);wheel(...spare,s.heading+Math.PI/2,true);
  g.y=s.y;return g;
 }
-const api={height,nearest,route,obstacles,landmarks,vehicle,base,rand,regions,regionAt,stream,stats,BOUNDS,WORLD_ID,candidates,terrainColor,waterAt,surface,lakes,effects,rockTrails,rockField,ridgeHeight,geology,buildChunk};
+const api={height,nearest,route,obstacles,landmarks,vehicle,base,rand,regions,regionAt,stream,stats,BOUNDS,WORLD_ID,candidates,terrainColor,waterAt,surface,lakes,effects,rockTrails,rockField,ridgeHeight,geology,spawnPoint,spawnIds,buildChunk};
 if(typeof module!=='undefined')module.exports=api;else window.AmberWorld=api;
 })();

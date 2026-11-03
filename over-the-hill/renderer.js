@@ -59,6 +59,7 @@ function sync(groups){
 }
 api.groundReady=(x,z)=>[...batches.keys()].some(g=>g.cell===Math.floor(x/128)+','+Math.floor(z/128)&&g.lod===4&&!staged.has(g)&&(g.ground||g.faces[0]?.terrain===1));
 
+api.areaReady=(x,z)=>[[0,0],[128,0],[-128,0],[0,128],[0,-128]].every(([dx,dz])=>api.groundReady(x+dx,z+dz));
 api.draw=function(groups,eye,yaw,pitch,width,height,dpr,range,actors=[]){if(!ready)return false;frame++;const pixel=Math.min(dpr,software?.65:1.35);if(gl.getPixelRatio()!==pixel||canvas.width!==Math.floor(width*pixel)||canvas.height!==Math.floor(height*pixel)){gl.setPixelRatio(pixel);gl.setSize(width,height,false);}if(worldRef!==groups)sync(groups);const uploadStart=performance.now();if(uploadQueue.length){
  uploadQueue.sort((a,b)=>Math.hypot(a[0].x-eye.x,a[0].z-eye.z)-Math.hypot(b[0].x-eye.x,b[0].z-eye.z));
  const transaction=uploadQueue[0],g=transaction.shift(),cell=g.cell;addGroup(g);staged.add(g);if(!transaction.length)uploadQueue.shift();
