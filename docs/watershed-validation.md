@@ -13,4 +13,4 @@ Headless Chromium used CPU-based SwiftShader: approximately 13–38 FPS across t
 
 All 11 model roots and their real vertex/normal data were checked in the GLB; the editable Blender source was validated. Seven locations and ~6.7 km of browser driving passed with the new Three.js renderer. The same two-client Worker-preview and offline suites passed again after moving the network heartbeat out of the rendering loop.
 
-The full-detail CPU-rendered scene was slow (2–5 FPS). The final software fallback reduced the spawn scene to 184,031 triangles / 153 draw calls, measured at roughly 6.7 FPS. No claim of smooth Chromebook hardware performance is made. Actual hardware and 24-player load profiling remain unverified.
+The full-detail CPU-rendered scene was slow (2–5 FPS). The final software fallback reduced the spawn scene to 197,343 triangles / 153 draw calls, measured at roughly 6.5 FPS. No claim of smooth Chromebook hardware performance is made. Actual hardware and 24-player load profiling remain unverified.

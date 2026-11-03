@@ -10,6 +10,6 @@ The main expedition loop runs north from the trailhead, through Copperwood and F
 
 ## Rendering contract
 
-128 m spatial cells contain a continuous shared-coordinate terrain mesh. Near cells use 8 m samples; distant cells use 32 m samples and skirts. Near foliage and structure batches load independently from terrain. The client retains bounded spatial caches and uploads only changed batches. Terrain color and smooth gradient lighting are evaluated in world coordinates. All vegetation collision candidates use the same fixed coordinate hash on server and client.
+128 m spatial cells contain a continuous shared-coordinate terrain mesh. Near cells use 4 m samples; distant cells use 32 m samples and skirts. Near foliage and structure batches load independently from terrain. The client retains bounded spatial caches and uploads only changed batches. Terrain color and smooth gradient lighting are evaluated in world coordinates. All vegetation collision candidates use the same fixed coordinate hash on server and client.
 
 The 64 km² figure is geographic bounds, not a claim that every hectare has authored detail. Scenic routes and landmark clusters are the deliberate content spine; wilderness between them uses deterministic dressing. Performance on physical school Chromebooks still requires device testing.
