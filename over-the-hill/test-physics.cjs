@@ -21,3 +21,5 @@ assert([s.x,s.y,s.z,s.pitch,s.roll,s.speed].every(Number.isFinite),'long-run sta
 for(const [control,sign] of [['left',-1],['right',1]]){const v=P.spawn(flat);for(let i=0;i<180;i++)P.step(v,{up:true,[control]:true},1/120,flat,[]);assert(v.x*sign>1,'actual '+control+' movement must match control');}
 for(let i=0;i<12;i++){const a=i/12*Math.PI*2,v=P.spawn(flat,Math.cos(a)*20,Math.sin(a)*15);for(let j=0;j<4200;j++)P.step(v,{},1/120,flat,[{x:0,z:0,r:40,rx:40,rz:33}]);assert(Math.hypot(v.x/41.25,v.z/34.25)>.999,'overlapping elliptical solids gradually separate at every angle');}
 console.log('PASS Over the Hill spring settling, acceleration, braking, reverse steering, slope articulation and long-run stability');
+
+for(const direction of ["left","right"]){const s=P.spawn(flat);for(let i=0;i<180;i++)P.step(s,{up:true,[direction]:true},1/120,flat);const [left,right]=s.wheels;assert(direction==="left"?Math.abs(left.steer)>Math.abs(right.steer):Math.abs(right.steer)>Math.abs(left.steer),"inside front wheel has the tighter steering angle");}

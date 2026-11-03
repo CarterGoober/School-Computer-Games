@@ -47,7 +47,7 @@ function step(s,input,dt,height,obstacles=[]){
  }
 
  const boundary=4000;if(Math.abs(s.x)>boundary||s.z<-2000||s.z>6000){s.x=oldX;s.z=oldZ;s.speed*=-.15;}
- s.wheels=contacts(s,height);let gripSum=0;for(const wheel of s.wheels){const surface=height.surface?height.surface(wheel.x,wheel.z):{depth:0,grip:1};wheel.waterDepth=surface.depth;wheel.grip=surface.grip;gripSum+=surface.grip;}s.contactGrip=gripSum/4;const w=s.wheels,mean=w.reduce((a,v)=>a+v.y,0)/4;
+ s.wheels=contacts(s,height);let gripSum=0;for(const wheel of s.wheels){const surface=height.surface?height.surface(wheel.x,wheel.z):{depth:0,grip:1};wheel.waterDepth=surface.depth;wheel.grip=surface.grip;const steerTangent=Math.tan(s.steer);wheel.steer=wheel.lz>0?Math.atan(3.3*steerTangent/(3.3-wheel.lx*steerTangent)):0;gripSum+=surface.grip;}s.contactGrip=gripSum/4;const w=s.wheels,mean=w.reduce((a,v)=>a+v.y,0)/4;
  s.vy+=clamp(52*(mean+.38+Math.min(.22,depth*.12)-s.y)-14.5*s.vy,-20,20)*dt;s.vy=clamp(s.vy,-4,4);s.y+=s.vy*dt;
  // Limit bottom-out while allowing travel and damped rebound over rough ground.
  const floor=Math.max(...w.map(v=>v.y+.11-v.lz*Math.sin(s.pitch)-v.lx*Math.sin(s.roll)));if(s.y<floor){s.y=Math.min(floor,previousY+4*dt);s.vy=Math.max(0,s.vy);}

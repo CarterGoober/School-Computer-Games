@@ -9,3 +9,11 @@ Passed: test-vehicle, test-models, test-physics, test-stability, test-network, t
 Remaining limits: physical Chromebook profiling, a full multiplayer load test and subjective playtesting. The vehicle uses an efficient four-contact suspension model with animated mechanisms, not a general rigid-body physics engine.
 
 Final bounded-backdrop profile on the same browser: main-thread stream max 0.7 ms / p95 0.1 ms; geometry preparation max 2.9 ms / p95 0.3 ms. Smoothed software frame times remained 157–173 ms in this run. The comparison demonstrates removal of main-thread loading work, not guaranteed total FPS.
+
+## Prepared-trail refinement
+
+The subsequent pass retains all 20 independent vehicle transforms while sharing four wheel/spring/shock/arm mesh families and the axle mesh: the exported GLB is 957,208 bytes (previously 1,673,564 bytes), with seven shared runtime geometries. The lower body and boxed frame have wheel clearance. Front wheels now use inside/outside steering angles. Soil/gravel, grass, rock, sand and water retain distinct continuous response parameters.
+
+Terrain groups now carry cell/LOD identities. Replacement groups are staged one per frame and shown together only when complete; old cell geometry stays visible during preparation. PLAY waits for a complete rendered trailhead. This fixes a 31.9 ms preparation spike seen when all groups in a cell were prepared in one frame. The final Chromium high-mode run measured preparation max 4.0 ms / p95 0.6 ms, stream calls max 5.1 ms / p95 0.1 ms. Final software FPS was 13.7; it is not a physical Chromebook result.
+
+`test-prepared-trails.cjs` verifies prepared PLAY, shared runtime geometry, actual A/D movement, and rendered terrain/camera clearance in Copperwood, the rock garden, Stillwater and Lantern Pass. The run had no page/renderer errors. Physics, all three spurs, all five authored long routes, water crossings, two independent Worker-preview clients, recovery/rejoin, offline loading, Node persistence, Summit Run, wallet migration and shop checks also passed. Physical GPU profiling and full multiplayer-load testing remain open.

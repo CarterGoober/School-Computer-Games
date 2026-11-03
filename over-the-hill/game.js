@@ -62,7 +62,8 @@ if(!storage)$('#save-status').textContent='Storage unavailable; discoveries last
 if('serviceWorker'in navigator)navigator.serviceWorker.register('../sw.js').catch(()=>{});
 requestAnimationFrame(frame);
 
-if(renderer){$('#start').disabled=true;$('#save-status').textContent='Loading original 3D nature models…';renderer.loaded.then(ok=>{$('#start').disabled=!ok;$('#save-status').textContent=ok?'Ashen Vale · An original shared-world expedition.':renderer.error;});}
+if(renderer){$('#start').disabled=true;$('#save-status').textContent='Loading the wagon and woodland…';renderer.loaded.then(ok=>{if(!ok){$('#save-status').textContent=renderer.error;return;}$('#save-status').textContent='Preparing the trailhead…';function prepared(){if(renderer.groundReady(car.x,car.z)){$('#start').disabled=false;$('#save-status').textContent='Ashen Vale · An original shared-world expedition.';}else requestAnimationFrame(prepared);}prepared();});}
+
 
 // Network input heartbeat is independent of GPU frame delivery.
 setInterval(()=>{if(session)sendInput();},80);

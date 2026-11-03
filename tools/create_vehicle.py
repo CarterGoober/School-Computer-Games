@@ -24,7 +24,16 @@ def finish(name):
  bpy.ops.object.select_all(action='DESELECT')
  for o in parts:o.select_set(True)
  bpy.context.view_layer.objects.active=parts[0];bpy.ops.object.join();o=bpy.context.object;o.name=name;bpy.context.scene.cursor.location=(0,0,0);bpy.ops.object.origin_set(type='ORIGIN_CURSOR');parts=[];return o
-box((0,-.14,0),(1.7,.28,4.3),steel);box((0,.22,0),(1.98,.46,4.15),paint)
+# Narrow boxed ladder chassis and raised body leave real tire clearance.
+for x in [-.62,.62]:box((x,-.16,0),(.13,.2,4.3),steel)
+for z in [-1.75,-.6,.6,1.7]:box((0,-.16,z),(1.36,.12,.12),steel)
+box((0,.29,0),(1.98,.32,4.15),paint)
+# Closed floor, sill seams, pressed panels and front hood reinforcements.
+box((0,.03,-.1),(1.62,.12,3.7),steel)
+for x in [-.95,.95]:
+ box((x,.28,-.5),(.055,.055,2.1),silver,.008)
+ for z in [-1.25,-.45,.35]:box((x,.64,z),(.06,.025,.35),steel,.006)
+for x in [-.67,.67]:box((x,.665,1.35),(.04,.025,.95),paint,.008)
 box((0,.76,-.7),(1.98,.65,2.65),paint);box((0,1.78,-.65),(2.08,.15,2.91),cream);box((0,.56,1.35),(1.9,.18,1.35),paint)
 box((0,1.25,-1.99),(1.64,.68,.045),glass)
 box((0,1.23,.67),(1.73,.79,.06),glass)
@@ -60,8 +69,6 @@ tube((0,.95,-2.06),(0,.95,-2.39),.46,rubber,28);tube((0,.95,-2.4),(0,.95,-2.42),
 finish('body')
 for name in ['FL','FR','RL','RR']:
  # Axle is X; the tire profile is a rounded section, with individual tread blocks.
- for x,r in [(-.17,.42),(-.12,.48),(.12,.48),(.17,.42)]:
-  pass
  for a,b,r in [(-.17,-.12,.44),(-.12,.12,.48),(.12,.17,.44)]:tube((a,0,0),(b,0,0),r,rubber,28)
  for side in [-1,1]:
   tube((side*.171,0,0),(side*.19,0,0),.29,cream,24);tube((side*.192,0,0),(side*.21,0,0),.14,silver,16)
@@ -80,6 +87,12 @@ for name in ['FL','FR','RL','RR']:
 for name in ['axle_front','axle_rear']:
  tube((-1,0,0),(1,0,0),.075,steel);tube((-.18,0,0),(.18,0,0),.17,steel,16);finish(name)
 tube((0,0,0),(0,1,0),.028,silver);finish('steering_link')
+# Four independently animated nodes share immutable mesh data in the GLB.
+# This preserves the mechanisms while cutting download and GPU memory costs.
+for family in ['wheel_','spring_','shock_','arm_']:
+ base=bpy.data.objects[family+'FL']
+ for suffix in ['FR','RL','RR']:bpy.data.objects[family+suffix].data=base.data
+bpy.data.objects['axle_rear'].data=bpy.data.objects['axle_front'].data
 bpy.context.preferences.filepaths.save_version=0
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT,'over-the-hill/wren.blend'))
 bpy.ops.export_scene.gltf(filepath=os.path.join(ROOT,'over-the-hill/wren.glb'),export_format='GLB',export_yup=True,export_apply=True)

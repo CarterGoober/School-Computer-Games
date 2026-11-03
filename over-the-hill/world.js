@@ -56,7 +56,10 @@ const regions=[{name:'Copperwood',note:'A valley full of gold.',x:0,z:600},{name
 function regionAt(x,z){return regions.reduce((a,b)=>Math.hypot(x-a.x,z-a.z)<Math.hypot(x-b.x,z-b.z)?a:b);}
 function waterAt(x,z){const w=waterSource(x,z);return w?{level:w.level,depth:Math.max(0,w.level-height(x,z)),shore:w.shore}: {level:-10000,depth:0,shore:Infinity};}
 function wet(x,z){return waterAt(x,z).depth>.03;}
-function surface(x,z){const w=waterAt(x,z),y=height(x,z),trail=1-smooth((nearest(x,z).distance-3)/6),sand=1-smooth((Math.abs(w.shore)-8)/25),wetness=1-smooth((w.shore+2)/12),rock=Math.max(smooth((y-250)/200),rockField(x,z).weight);return{...w,sand,wetness,grip:clamp(1-sand*.26*(1-wetness)-trail*.1-rock*.02,.55,1),resistance:.16+sand*.32*(1-wetness)+trail*.04,kind:w.depth>.04?'water':sand>.4?(wetness>.45?'wet sand':'sand'):rock>.5?'rock':trail>.4?(y<150&&regionAt(x,z).name==='Copperwood'?'dirt':'gravel'):'grass'};}
+function surface(x,z){
+ const w=waterAt(x,z),y=height(x,z),trail=1-smooth((nearest(x,z).distance-3)/6),sand=1-smooth((Math.abs(w.shore)-8)/25),wetness=1-smooth((w.shore+2)/12),rock=Math.max(smooth((y-250)/200),rockField(x,z).weight),dirt=1-smooth((y-100)/100);
+ return{...w,sand,wetness,grip:clamp(.96-trail*(.10+.05*(1-dirt))+rock*.04-sand*.24*(1-wetness),.55,1),resistance:.17+trail*(.045+.02*(1-dirt))+sand*.30*(1-wetness)+rock*.015,kind:w.depth>.04?'water':sand>.4?(wetness>.45?'wet sand':'sand'):rock>.5?'rock':trail>.4?(dirt>.5?'dirt':'gravel'):'grass'};
+}
 height.surface=surface;
 const outcrops=[{x:-24,z:135,r:6,h:12},{x:37,z:173,r:5,h:9},{x:306,z:618,r:7,h:14},{x:1180,z:1590,r:5,h:11},{x:1475,z:2170,r:7,h:13},{x:-2240,z:2230,r:7,h:16}];
 for(const p of rockSegments)for(let d=16;d<p.length;d+=23)for(const side of [-1,1]){const x=p.a[0]+p.dx*d/p.length+side*p.dz/p.length*12,z=p.a[1]+p.dz*d/p.length-side*p.dx/p.length*12;if(nearest(x,z).distance>10)outcrops.push({x,z,r:1.4+rand(x+z)*1.2,h:1.5+rand(z)*2});}
@@ -120,7 +123,8 @@ function makeWater(cx,cz,step=8){const g=group(cx*128+64,cz*128+64,92);g.water=t
  for(let x=cx*128;x<(cx+1)*128;x+=step)for(let z=cz*128;z<(cz+1)*128;z+=step){const a=vertex(x,z),b=vertex(x+step,z),c=vertex(x+step,z+step),d=vertex(x,z+step);if(Math.max(a.d,b.d,c.d,d.d)<=0)continue;tri([a,b,c]);tri([a,c,d]);}return g;}
 // Chunk generation runs away from input, physics and rendering. Only the nearby
 // fixed watershed is resident. Preload an outer ring before it becomes visible.
-function buildChunk(a,b,lod){if(lod===64){const g=group(a*512+256,b*512+256,370);g.distant=true;for(let x=a*512;x<(a+1)*512;x+=64)for(let z=b*512;z<(b+1)*512;z+=64){const pt=(x,z)=>[x,height(x,z)-5,z];terrainFace(g,[pt(x,z),pt(x+64,z),pt(x+64,z+64)]);terrainFace(g,[pt(x,z),pt(x+64,z+64),pt(x,z+64)]);}return[g];}const list=[makeTerrain(a,b,lod),makeWater(a,b,lod===4?4:16)];if(lod===4)list.push(...makeScenery(a,b));else list.push(distantGroves(a,b));return list;}
+function tagChunk(list,a,b,lod){for(const g of list){g.cell=(lod===64?'vista:':'')+a+','+b;g.lod=lod;}return list;}
+function buildChunk(a,b,lod){if(lod===64){const g=group(a*512+256,b*512+256,370);g.distant=true;for(let x=a*512;x<(a+1)*512;x+=64)for(let z=b*512;z<(b+1)*512;z+=64){const pt=(x,z)=>[x,height(x,z)-5,z];terrainFace(g,[pt(x,z),pt(x+64,z),pt(x+64,z+64)]);terrainFace(g,[pt(x,z),pt(x+64,z+64),pt(x,z+64)]);}return tagChunk([g],a,b,lod);}const list=[makeTerrain(a,b,lod),makeWater(a,b,lod===4?4:16)];if(lod===4)list.push(...makeScenery(a,b));else list.push(distantGroves(a,b));return tagChunk(list,a,b,lod);}
 const chunks=new Map();let active=[],streamKey='',pending=[],wanted=new Map(),worker=null,busy=false,dirty=false;
 const stats={chunks:0,pending:0,vertices:0,buildMs:0,mainMs:0};
 function pump(){if(busy||!worker||!pending.length||stats.uploadPending>12)return;const [key,p]=pending.shift();busy=true;worker.postMessage({key,...p});}
