@@ -1,60 +1,27 @@
-/* Original fixed-step off-road dynamics. Coordinates: metres, +Y up, +Z forward. */
+/* Shared SI rigid-body vehicle simulation. Gravity is never replaced by a height clamp. */
 (function(root){
 'use strict';
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function contacts(s,height){const sn=Math.sin(s.heading),cs=Math.cos(s.heading);return [[-1,1.65],[1,1.65],[-1,-1.65],[1,-1.65]].map(([x,z])=>{const wx=s.x+x*cs+z*sn,wz=s.z+z*cs-x*sn;return{x:wx,z:wz,y:height(wx,wz)+.48,lx:x,lz:z};});}
-function spawn(height,x=0,z=0,heading=0){const s={x,z,heading,motionHeading:heading,speed:0,steer:0,y:height(x,z)+.86,vy:0,pitch:0,pitchV:0,roll:0,rollV:0,travel:0,wheelSpin:0};s.wheels=contacts(s,height);const w=s.wheels;
- s.pitch=clamp(Math.atan2((w[0].y+w[1].y-w[2].y-w[3].y)/2,3.3),-.55,.55);
- s.roll=clamp(Math.atan2((w[1].y+w[3].y-w[0].y-w[2].y)/2,2),-.5,.5);
- s.y=w.reduce((sum,w)=>sum+w.y,0)/4+.38;
- limitTravel(s);return s;}
-function spring(s,k,target,dt,stiff,damp){const v=k+'V';s[v]+=(stiff*(target-s[k])-damp*s[v])*dt;s[k]+=s[v]*dt;}
-function limitTravel(s){for(const w of s.wheels){w.groundY=w.y;const anchor=s.y-.35+w.lz*Math.sin(s.pitch)+w.lx*Math.sin(s.roll);w.y=clamp(w.y,anchor-.27,anchor+.24);}}
-function step(s,input,dt,height,obstacles=[]){
- dt=Math.min(dt,1/30);const previousY=s.y;
- const steering=(input.left?-1:0)+(input.right?1:0);
- s.steer+=(steering*.53/(1+Math.abs(s.speed)*.035)-s.steer)*(1-Math.exp(-7*dt));
- const front=height(s.x+Math.sin(s.heading)*1.7,s.z+Math.cos(s.heading)*1.7),rear=height(s.x-Math.sin(s.heading)*1.7,s.z-Math.cos(s.heading)*1.7);
- const terrain=height.surface?height.surface(s.x,s.z):{depth:0,grip:1,resistance:.16},depth=terrain.depth,grip=s.contactGrip??terrain.grip;s.waterDepth=depth;s.chassisWaterDepth=Math.max(0,(terrain.level??-10000)-(s.y-.12));
- let accel=0;
- if(input.up)accel=s.speed<-.3?8:6.5*Math.max(.12,1-Math.max(0,s.speed)/18.75);
- if(input.down)accel=s.speed>.3?-10:-3.6*Math.max(.12,1+Math.min(0,s.speed)/5);
- accel*=(.75+.25*grip)/(1+depth*1.6);
- accel-=clamp((front-rear)/3.4,-.8,.8)*4.5;
- if(input.brake){const delta=14*grip*dt;s.speed=Math.abs(s.speed)<delta?0:s.speed-Math.sign(s.speed)*delta;accel=0;}
- else if(!input.up&&!input.down&&Math.abs(s.speed)<.15&&Math.abs(front-rear)<.8){s.speed=0;accel=0;}
- s.speed=clamp(s.speed+accel*dt,-5.5,19.375);s.speed*=Math.exp(-(terrain.resistance+.012*Math.abs(s.speed)+Math.min(2.2,depth*.85))*dt);
- const lateralLimit=4.5*grip/Math.max(1,Math.abs(s.speed));const yaw=clamp(s.speed*Math.tan(s.steer)/3.3*grip/(1+depth*.18),-lateralLimit,lateralLimit);s.heading+=yaw*dt;
- const oldX=s.x,oldZ=s.z;const previous=Number.isFinite(s.motionHeading)?s.motionHeading:s.heading;s.motionHeading=previous+Math.atan2(Math.sin(s.heading-previous),Math.cos(s.heading-previous))*(1-Math.exp(-dt*(12*grip)/(1+depth*.4)));s.x+=Math.sin(s.motionHeading)*s.speed*dt;s.z+=Math.cos(s.motionHeading)*s.speed*dt;
- // Sweep each small step against solid scenery. An overlapping saved position
- // gets a bounded outward nudge, never a projection across an entire boulder.
- let separationBudget=.8*dt;
- for(const o of (typeof obstacles==='function'?obstacles(s.x,s.z):obstacles)){
-  const rx=(o.rx||o.r)+1.25,rz=(o.rz||o.r)+1.25;
-  let dx=s.x-o.x,dz=s.z-o.z,d=Math.hypot(dx/rx,dz/rz);
-  if(d>=1)continue;
-  const before=Math.hypot((oldX-o.x)/rx,(oldZ-o.z)/rz);
-  if(before>=1){
-   const nx=(oldX-o.x)/(rx*rx),nz=(oldZ-o.z)/(rz*rz),length=Math.hypot(nx,nz),ux=nx/length,uz=nz/length;
-   const mx=s.x-oldX,mz=s.z-oldZ,inward=Math.min(0,mx*ux+mz*uz);
-   s.x=oldX+mx-ux*inward;s.z=oldZ+mz-uz*inward;
-   s.speed*=.9;continue;
-  }
-  if(d<before){s.x=oldX;s.z=oldZ;s.speed*=.15;dx=s.x-o.x;dz=s.z-o.z;d=before;}
-  const nx=d>1e-6?dx/(rx*rx):1,nz=d>1e-6?dz/(rz*rz):0,n=Math.hypot(nx,nz);
-  const push=Math.min(separationBudget,(1-d)*Math.min(rx,rz)+.001);
-  s.x+=nx/n*push;s.z+=nz/n*push;separationBudget-=push;
- }
-
- const boundary=4000;if(Math.abs(s.x)>boundary||s.z<-2000||s.z>6000){s.x=oldX;s.z=oldZ;s.speed*=-.15;}
- s.wheels=contacts(s,height);let gripSum=0;for(const wheel of s.wheels){const surface=height.surface?height.surface(wheel.x,wheel.z):{depth:0,grip:1};wheel.waterDepth=surface.depth;wheel.grip=surface.grip;const steerTangent=Math.tan(s.steer);wheel.steer=wheel.lz>0?Math.atan(3.3*steerTangent/(3.3-wheel.lx*steerTangent)):0;gripSum+=surface.grip;}s.contactGrip=gripSum/4;const w=s.wheels,mean=w.reduce((a,v)=>a+v.y,0)/4;
- s.vy+=clamp(52*(mean+.38+Math.min(.22,depth*.12)-s.y)-14.5*s.vy,-20,20)*dt;s.vy=clamp(s.vy,-4,4);s.y+=s.vy*dt;
- // Limit bottom-out while allowing travel and damped rebound over rough ground.
- const floor=Math.max(...w.map(v=>v.y+.11-v.lz*Math.sin(s.pitch)-v.lx*Math.sin(s.roll)));if(s.y<floor){s.y=Math.min(floor,previousY+4*dt);s.vy=Math.max(0,s.vy);}
- spring(s,'pitch',clamp(Math.atan2((w[0].y+w[1].y-w[2].y-w[3].y)/2,3.3)-accel*.007,-.55,.55),dt,64,12);
- spring(s,'roll',clamp(Math.atan2((w[1].y+w[3].y-w[0].y-w[2].y)/2,2)-yaw*s.speed*.012,-.5,.5),dt,70,13);
- limitTravel(s);s.travel+=Math.abs(s.speed)*dt;s.wheelSpin+=s.speed*dt/.48;
- return s;
+const C=root.HillRigid||(typeof require==='function'?require('./rigid-engine.js'):null);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),GRAVITY=9.81,COM=.25,TILE=16;
+const contexts=new WeakMap(),namedContexts=new Map(),tiles=new WeakMap();
+function terrainShape(height,cx,cz){let cache=tiles.get(height);if(!cache){cache=new Map();tiles.set(height,cache);}const key=cx+','+cz;if(!cache.has(key)){const data=[];for(let x=0;x<=8;x++){const row=[];for(let z=0;z<=8;z++)row.push(height(cx*TILE+x*2,cz*TILE+TILE-z*2));data.push(row);}cache.set(key,new C.Heightfield(data,{elementSize:2}));while(cache.size>512)cache.delete(cache.keys().next().value);}return cache.get(key);}
+function serialize(s,ctx){const {body,vehicle}=ctx,q=body.quaternion,v=body.velocity,omega=body.angularVelocity,forward=q.vmult(new C.Vec3(0,0,1)),right=q.vmult(new C.Vec3(1,0,0));const offset=q.vmult(new C.Vec3(0,COM,0));s.x=body.position.x-offset.x;s.y=body.position.y-offset.y;s.z=body.position.z-offset.z;s.q=[q.x,q.y,q.z,q.w];s.vx=v.x;s.vy=v.y;s.vz=v.z;s.angular=[omega.x,omega.y,omega.z];s.heading=Math.atan2(forward.x,forward.z);s.motionHeading=Math.atan2(v.x,v.z);s.pitch=Math.atan2(forward.y,Math.hypot(forward.x,forward.z));s.roll=Math.atan2(right.y,Math.hypot(right.x,right.z));s.speed=v.dot(new C.Vec3(Math.sin(s.heading),0,Math.cos(s.heading)));s.airborne=vehicle.wheelInfos.every(w=>!w.isInContact);s.wheels=vehicle.wheelInfos.map((w,i)=>{const contact=w.isInContact,ground=contact?w.raycastResult.hitPointWorld.y+.48:null;vehicle.updateWheelTransform(i);w.isInContact=contact;const p=w.worldTransform.position,q=w.worldTransform.quaternion;return{q:[q.x,q.y,q.z,q.w],x:p.x,y:p.y,z:p.z,lx:i%2?1:-1,lz:i<2?1.65:-1.65,groundY:ground,contact,suspensionLength:w.suspensionLength,rotation:w.rotation,deltaRotation:w.deltaRotation,steer:w.steering,waterDepth:ctx.height.surface?ctx.height.surface(p.x,p.z).depth:0};});s.wheelSpin=s.wheels.reduce((a,w)=>a+w.rotation,0)/4;return s;}
+function spawn(height,x=0,z=0,heading=0){const sn=Math.sin(heading),cs=Math.cos(heading),pts=[[-1,1.65],[1,1.65],[-1,-1.65],[1,-1.65]],h=pts.map(([a,b])=>height(x+a*cs+b*sn,z+b*cs-a*sn)),pitch=Math.atan2((h[0]+h[1]-h[2]-h[3])/2,3.3),roll=Math.atan2((h[1]+h[3]-h[0]-h[2])/2,2),q=new C.Quaternion();q.setFromEuler(-pitch,heading,roll,'YXZ');return{x,z,y:Math.max(height(x,z),h.reduce((a,v)=>a+v,0)/4)+1.0,heading,motionHeading:heading,pitch,roll,q:[q.x,q.y,q.z,q.w],vx:0,vy:0,vz:0,angular:[0,0,0],speed:0,airborne:true,steer:0,travel:0,wheelSpin:0,wheels:pts.map(([a,b],i)=>({x:x+a*cs+b*sn,y:h[i]+.48,z:z+b*cs-a*sn,lx:a,lz:b,contact:false,groundY:h[i]+.48,rotation:0,suspensionLength:.43}))};}
+function context(s,height){let ctx=s.physicsKey?namedContexts.get(s.physicsKey):contexts.get(s);if(ctx&&ctx.height===height)return ctx;const world=new C.World({gravity:new C.Vec3(0,-GRAVITY,0),allowSleep:false});world.solver.iterations=12;world.solver.tolerance=.001;world.broadphase=new C.SAPBroadphase(world);world.defaultContactMaterial.friction=.55;world.defaultContactMaterial.restitution=.08;world.defaultContactMaterial.contactEquationStiffness=1e7;world.defaultContactMaterial.contactEquationRelaxation=4;
+ const body=new C.Body({mass:1500,linearDamping:.005,angularDamping:.12});body.addShape(new C.Box(new C.Vec3(.86,.6,2.0)),new C.Vec3(0,.2,0));body.addShape(new C.Box(new C.Vec3(.94,.4,1.35)),new C.Vec3(0,1.15,-.65));
+ const vehicle=new C.RaycastVehicle({chassisBody:body,indexRightAxis:0,indexUpAxis:1,indexForwardAxis:2});for(let i=0;i<4;i++)vehicle.addWheel({radius:.48,directionLocal:new C.Vec3(0,-1,0),axleLocal:new C.Vec3(-1,0,0),chassisConnectionPointLocal:new C.Vec3(i%2?1:-1,-.20,i<2?1.65:-1.65),suspensionRestLength:.43,maxSuspensionTravel:.22,suspensionStiffness:40,dampingRelaxation:4.6,dampingCompression:5.2,maxSuspensionForce:16000,frictionSlip:1.8,rollInfluence:.3,customSlidingRotationalSpeed:-20,useCustomSlidingRotationalSpeed:true});vehicle.addToWorld(world);
+ for(const [x,z,hx,hz]of [[-4001,2000,1,4001],[4001,2000,1,4001],[0,-2001,4001,1],[0,6001,4001,1]]){const wall=new C.Body({mass:0,shape:new C.Box(new C.Vec3(hx,2500,hz))});wall.position.set(x,1000,z);world.addBody(wall);}
+ ctx={world,body,vehicle,height,terrain:new Map(),scenery:new Map(),cell:''};contexts.set(s,ctx);if(s.physicsKey){namedContexts.set(s.physicsKey,ctx);while(namedContexts.size>64)namedContexts.delete(namedContexts.keys().next().value);}return ctx;}
+function staticScene(ctx,s,obstacles){const {world,height}=ctx,cx=Math.floor(s.x/TILE),cz=Math.floor(s.z/TILE),key=cx+','+cz;if(key===ctx.cell)return;ctx.cell=key;const wanted=new Set();for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++){const key=x+','+z;wanted.add(key);if(!ctx.terrain.has(key)){const b=new C.Body({mass:0,shape:terrainShape(height,x,z)});b.position.set(x*TILE,0,z*TILE+TILE);b.quaternion.setFromAxisAngle(new C.Vec3(1,0,0),-Math.PI/2);world.addBody(b);ctx.terrain.set(key,b);}}for(const [key,b]of ctx.terrain)if(!wanted.has(key)){world.removeBody(b);ctx.terrain.delete(key);}
+ const near=typeof obstacles==='function'?obstacles(s.x,s.z):obstacles,wantedObjects=new Set();for(const o of near){if(Math.hypot(o.x-s.x,o.z-s.z)>115+(o.r||0))continue;const key=o.x+','+o.z;wantedObjects.add(key);if(ctx.scenery.has(key))continue;const tree=o.kind==='tree',heightOf=o.h|| (o.kind==='rock'?(o.r||1)*.86:6),shape=tree?new C.Cylinder(o.r||.5,o.r||.5,heightOf,8):o.kind==='rock'?new C.Cylinder(o.r*.7,o.r*.85,heightOf,8):new C.Box(new C.Vec3(o.rx||o.r||2,heightOf/2,o.rz||o.r||2)),b=new C.Body({mass:0,shape});b.position.set(o.x,height(o.x,o.z)+heightOf/2+(o.yOffset||0),o.z);if(o.heading)b.quaternion.setFromAxisAngle(new C.Vec3(0,1,0),o.heading);if(o.kind==='log'){b.shapes=[];b.shapeOffsets=[];b.shapeOrientations=[];b.addShape(new C.Cylinder(.13,.13,o.length,8));b.quaternion.setFromEuler(Math.PI/2,o.heading,0,'YXZ');b.updateBoundingRadius();b.aabbNeedsUpdate=true;}world.addBody(b);ctx.scenery.set(key,b);}for(const [key,b]of ctx.scenery)if(!wantedObjects.has(key)){world.removeBody(b);ctx.scenery.delete(key);}}
+function step(s,input,dt,height,obstacles=[]){dt=clamp(dt,0,1/30);if(!dt)return s;const ctx=context(s,height),{body,vehicle,world}=ctx;staticScene(ctx,s,obstacles);if(s.q)body.quaternion.set(...s.q);const offset=body.quaternion.vmult(new C.Vec3(0,COM,0));body.position.set(s.x+offset.x,s.y+offset.y,s.z+offset.z);body.velocity.set(s.vx||0,s.vy||0,s.vz||0);if(s.angular)body.angularVelocity.set(...s.angular);body.aabbNeedsUpdate=true;body.updateInertiaWorld();
+ const direction=(input.left?-1:0)+(input.right?1:0),speed=Math.hypot(body.velocity.x,body.velocity.z);s.steer+=(direction*Math.min(.52/(1+speed*.07),Math.atan(6.5*3.3/(speed*speed+1)))-s.steer)*(1-Math.exp(-7*dt));const sf=height.surface?height.surface(s.x,s.z):{depth:0,grip:1,resistance:.17};world.defaultContactMaterial.friction=.55*(sf.grip??1);s.waterDepth=sf.depth;s.chassisWaterDepth=Math.max(0,(sf.level??-1e4)-(s.y-.15));
+ for(let i=0;i<4;i++){vehicle.updateWheelTransform(i);const wheel=vehicle.wheelInfos[i],p=wheel.worldTransform.position,ground=height.surface?height.surface(p.x||s.x,p.z||s.z):sf,grip=ground.grip??1,depth=ground.depth||0;wheel.frictionSlip=1.8*grip/(1+depth*.25);vehicle.setSteeringValue(i<2?Math.atan(3.3*Math.tan(s.steer)/(3.3-(i%2?1:-1)*Math.tan(s.steer))):0,i);let force=0;if(input.up)force=s.speed<-.5?0:-2500*Math.max(.05,1-Math.max(0,s.speed)/14.5);if(input.down)force=s.speed>.5?0:1800*Math.max(.05,1+Math.min(0,s.speed)/6);const lowRange=1+clamp(((input.down?-s.pitch:s.pitch)-.15)*2,0,1)*clamp(1-Math.abs(s.speed)/5,0,1);vehicle.applyEngineForce(force*lowRange/(1+depth*1.6),i);vehicle.setBrake(input.brake||input.up&&s.speed<-.5||input.down&&s.speed>.5?20:input.up||input.down?0:Math.abs(s.speed)<.5?20:2.2,i);if(s.wheels?.[i]){wheel.rotation=s.wheels[i].rotation||0;wheel.deltaRotation=s.wheels[i].deltaRotation||0;}}
+ // Drag and bounded displacement forces act on the body; none set its position.
+ function environmentForces(){if(sf.depth>0){const drag=clamp(sf.depth*.9,0,2.5);body.applyForce(new C.Vec3(-body.velocity.x*1500*drag,-body.velocity.y*500*drag,-body.velocity.z*1500*drag));const immersion=clamp(s.chassisWaterDepth/1.6,0,1);body.applyForce(new C.Vec3(0,1500*GRAVITY*.65*immersion,0));}
+ if(!s.airborne){const rolling=(sf.resistance??.17)*1500;body.applyForce(new C.Vec3(-body.velocity.x*rolling,0,-body.velocity.z*rolling));}
+ }s.physicsAccumulator=(s.physicsAccumulator||0)+dt;while(s.physicsAccumulator>=1/120-1e-10){environmentForces();world.step(1/120);s.physicsAccumulator=Math.max(0,s.physicsAccumulator-1/120);}s.travel+=(Math.hypot(body.velocity.x,body.velocity.z))*dt;return serialize(s,ctx);
 }
-const api={spawn,step,clamp,toMPH:metresPerSecond=>Math.abs(metresPerSecond)*2.2369362920544};if(typeof module!=='undefined')module.exports=api;root.AmberPhysics=api;
+function prepare(s,height,obstacles=[]){const ctx=context(s,height);staticScene(ctx,s,obstacles);}
+const api={spawn,step,prepare,clamp,GRAVITY,toMPH:v=>Math.abs(v)*2.2369362920544};if(typeof module!=='undefined')module.exports=api;root.AmberPhysics=api;
 })(typeof window==='undefined'?globalThis:window);

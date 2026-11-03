@@ -34,14 +34,14 @@ api.loaded=Promise.all([loadGLB('nature.glb'),loadGLB('wren.glb')]).then(([natur
  ready=api.ready=true;api.stats.models=modelGeometries.size;api.stats.vehicleParts=vehicleParts.size;worldRef=null;return true;
 }).catch(e=>{api.error='3D assets could not load: '+e.message;return false;});
 function vehicleRig(index,s){let rig=vehicles[index];if(!rig){const group=new T.Group(),parts=new Map();for(const [name,geo]of vehicleParts){const mesh=new T.Mesh(geo,solid);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);parts.set(name,mesh);}scene.add(group);rig={group,parts};vehicles[index]=rig;}
- rig.group.visible=true;rig.group.position.set(s.x,s.y,s.z);rig.group.rotation.set(0,s.heading,0);
- const body=rig.parts.get('body');body.rotation.set(-s.pitch,0,s.roll,'YXZ');
+ rig.group.visible=true;rig.group.position.set(s.x,s.y,s.z);if(s.q)rig.group.quaternion.set(...s.q);else rig.group.rotation.set(0,s.heading,0);
+ const body=rig.parts.get('body');body.rotation.set(0,0,0);if(!s.q)body.rotation.set(-s.pitch,0,s.roll,'YXZ');
  const orientation=body.quaternion,up=new T.Vector3(0,1,0);
  function local(x,y,z){return new T.Vector3(x,y,z).applyQuaternion(orientation);}
  function link(name,a,b){const mesh=rig.parts.get(name),delta=b.clone().sub(a);mesh.position.copy(a);mesh.quaternion.setFromUnitVectors(up,delta.clone().normalize());mesh.scale.set(1,delta.length(),1);}
  const centers=[];
- for(let i=0;i<4;i++){const w=s.wheels[i],name=['FL','FR','RL','RR'][i],side=w.lx<0?-1:1,c=new T.Vector3(w.lx,w.y-s.y,w.lz);centers.push(c);const wheel=rig.parts.get('wheel_'+name);wheel.position.copy(c);wheel.rotation.set(0,w.steer??(w.lz>0?s.steer:0),0);wheel.rotateX(s.wheelSpin);
- const a=local(side*.74,.12,w.lz),b=new T.Vector3(side*.74,c.y,w.lz);link('spring_'+name,a,b);link('shock_'+name,a.clone().add(new T.Vector3(side*.18,0,.12)),b.clone().add(new T.Vector3(side*.18,0,.12)));link('arm_'+name,local(side*.55,-.18,w.lz-.65),new T.Vector3(side*.9,c.y,w.lz));}
+ for(let i=0;i<4;i++){const w=s.wheels[i],name=['FL','FR','RL','RR'][i],side=w.lx<0?-1:1,c=s.q?new T.Vector3(w.x-s.x,w.y-s.y,w.z-s.z).applyQuaternion(rig.group.quaternion.clone().invert()):new T.Vector3(w.lx,w.y-s.y,w.lz);centers.push(c);const wheel=rig.parts.get('wheel_'+name);wheel.position.copy(c);wheel.rotation.set(0,w.steer??(w.lz>0?s.steer:0),0);wheel.rotateX(s.wheelSpin);if(w.q&&s.q)wheel.quaternion.copy(rig.group.quaternion.clone().invert().multiply(new T.Quaternion(...w.q)));
+ const a=local(side*.74,.12,w.lz),b=new T.Vector3(c.x*.74,c.y,c.z);link('spring_'+name,a,b);link('shock_'+name,a.clone().add(new T.Vector3(side*.18,0,.12)),b.clone().add(new T.Vector3(side*.18,0,.12)));link('arm_'+name,local(side*.55,-.18,w.lz-.65),new T.Vector3(c.x*.9,c.y,c.z));}
  for(const [name,i]of [['axle_front',0],['axle_rear',2]]){const mesh=rig.parts.get(name),a=centers[i],b=centers[i+1];mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.rotation.z=Math.atan2(b.y-a.y,2);}
  link('steering_link',centers[0].clone().add(new T.Vector3(.15,0,.18)),centers[1].clone().add(new T.Vector3(-.15,0,.18+Math.sin(s.steer)*.22)));
 }

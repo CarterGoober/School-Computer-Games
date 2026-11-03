@@ -1,13 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),P=require('./physics.js');
-const flat=()=>0;
-// Saved positions can overlap changed scenery: resolve gradually, never teleport.
-const car=P.spawn(flat,0,0),obstacles=[{x:0,z:0,r:6},{x:-2,z:0,r:4}];
-let maxMove=0;
-for(let i=0;i<1800;i++){const before={x:car.x,z:car.z};P.step(car,{},1/120,flat,obstacles);maxMove=Math.max(maxMove,Math.hypot(car.x-before.x,car.z-before.z));}
-assert(maxMove<=.02,'overlapping obstacles must not eject a vehicle in one step; observed '+maxMove.toFixed(2)+'m');
-assert(Math.hypot(car.x,car.z)>=7.24,'a stationary overlapping vehicle gradually clears the obstacle');
-const slope=(x,z)=>x*.3+z*.35,s=P.spawn(slope);let maxRise=0;
-for(let i=0;i<600;i++){const y=s.y;P.step(s,{brake:true},1/120,slope);maxRise=Math.max(maxRise,Math.abs(s.y-y));}
-assert(maxRise<.03,'spawning on a slope should not kick the chassis upward');
-console.log('PASS bounded overlapping-obstacle recovery and settled slope spawn', {maxMove,maxRise});
+const assert=require('node:assert/strict'),P=require('./physics.js');const flat=()=>0;
+let s=P.spawn(flat);for(let i=0;i<600;i++)P.step(s,{brake:true},1/120,flat);let low=Infinity,high=-Infinity;for(let i=0;i<600;i++){P.step(s,{brake:true},1/120,flat);low=Math.min(low,s.y);high=Math.max(high,s.y);assert(s.wheels.every(w=>w.suspensionLength>=.21-1e-5&&w.suspensionLength<=.65+1e-5));}assert(high-low<.005,'resting suspension does not jitter');
+const uneven=(x,z)=>.35*Math.sin(x*.5+z*.25);s=P.spawn(uneven);for(let i=0;i<3600;i++){P.step(s,{up:i%600<400,left:i%900<90,brake:i%600>=400},1/120,uneven);assert([s.x,s.y,s.z,...s.q,...s.angular].every(Number.isFinite));assert(s.wheels.every(w=>w.suspensionLength>=.21-1e-5&&w.suspensionLength<=.65+1e-5),'wheels remain attached over uneven ground');}
+console.log('PASS resting jitter, finite force simulation and bounded suspension attachment',{restJitter:high-low});

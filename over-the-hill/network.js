@@ -19,7 +19,8 @@ function create(P,height,obstacles){
    const dx=target.x-car.x,dz=target.z-car.z,gap=Math.hypot(dx,dz),f=1-Math.exp(-3*dt);
    const correction=Math.min(gap*f,2.5*dt),scale=gap>1e-8?correction/gap:0;
    car.x+=dx*scale;car.z+=dz*scale;
-   for(const k of ['heading','motionHeading'])car[k]+=clamp(angle(target[k]-car[k])*f,-.5*dt,.5*dt);
+   if(car.q&&target.q){const C=root.HillRigid||(typeof require==='function'?require('./rigid-engine.js'):null),a=new C.Quaternion(...car.q),b=new C.Quaternion(...target.q),q=a.slerp(b,1-Math.exp(-2*dt));car.q=[q.x,q.y,q.z,q.w];}else for(const k of ['heading','motionHeading'])car[k]+=clamp(angle(target[k]-car[k])*f,-.5*dt,.5*dt);
+   car.y+=clamp((target.y-car.y)*f,-2.5*dt,2.5*dt);for(const k of ['vx','vy','vz'])if(Number.isFinite(target[k]))car[k]+=clamp((target[k]-car[k])*f,-4*dt,4*dt);if(car.angular&&target.angular)car.angular=car.angular.map((v,i)=>v+(target.angular[i]-v)*f);
    car.speed+=clamp((target.speed-car.speed)*f,-3*dt,3*dt);
    // Height, wheel contact and suspension always come from the local ground solve.
    // Move the target with current controls between authoritative packets.
