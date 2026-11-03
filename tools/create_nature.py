@@ -92,6 +92,14 @@ def grass(name,fern=False,shrub=False):
  return m.finish()
 def stone(name,cliff=False):
  rng=random.Random(114 if cliff else 62);parts=[]
+ if not cliff:
+  bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=1);o=bpy.context.object;o.name=name
+  for v in o.data.vertices:
+   r=.92+rng.random()*.16;v.co.x*=r;v.co.y*=r*.87;v.co.z=(v.co.z+1)*.43*r
+  o.data.materials.append(mats[10])
+  for face in o.data.polygons:face.use_smooth=True
+  o.select_set(False);return
+
  for i in range(4 if cliff else 3):
   bpy.ops.mesh.primitive_cube_add(size=1,location=((i-1)*(.38 if cliff else .25),(rng.random()-.5)*.35,0));o=bpy.context.object
   height=(2.7-i*.38 if cliff else .75+rng.random()*.3);o.scale=(.8+rng.random()*.35,1.1+rng.random()*.4,height);o.location.z=height*.5;o.rotation_euler=(rng.random()*.12,rng.random()*.14,(rng.random()-.5)*.35)

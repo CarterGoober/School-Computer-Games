@@ -17,14 +17,14 @@ function step(s,input,dt,height,obstacles=[]){
  const front=height(s.x+Math.sin(s.heading)*1.7,s.z+Math.cos(s.heading)*1.7),rear=height(s.x-Math.sin(s.heading)*1.7,s.z-Math.cos(s.heading)*1.7);
  const terrain=height.surface?height.surface(s.x,s.z):{depth:0,grip:1,resistance:.16},depth=terrain.depth,grip=s.contactGrip??terrain.grip;s.waterDepth=depth;s.chassisWaterDepth=Math.max(0,(terrain.level??-10000)-(s.y-.12));
  let accel=0;
- if(input.up)accel=s.speed<-.3?8:5.2*Math.max(.12,1-Math.max(0,s.speed)/15);
+ if(input.up)accel=s.speed<-.3?8:6.5*Math.max(.12,1-Math.max(0,s.speed)/18.75);
  if(input.down)accel=s.speed>.3?-10:-3.6*Math.max(.12,1+Math.min(0,s.speed)/5);
  accel*=(.75+.25*grip)/(1+depth*1.6);
  accel-=clamp((front-rear)/3.4,-.8,.8)*4.5;
  if(input.brake){const delta=14*grip*dt;s.speed=Math.abs(s.speed)<delta?0:s.speed-Math.sign(s.speed)*delta;accel=0;}
  else if(!input.up&&!input.down&&Math.abs(s.speed)<.15&&Math.abs(front-rear)<.8){s.speed=0;accel=0;}
- s.speed=clamp(s.speed+accel*dt,-5.5,15.5);s.speed*=Math.exp(-(terrain.resistance+.012*Math.abs(s.speed)+Math.min(2.2,depth*.85))*dt);
- const yaw=s.speed*Math.tan(s.steer)/3.3*grip/(1+depth*.18);s.heading+=yaw*dt;
+ s.speed=clamp(s.speed+accel*dt,-5.5,19.375);s.speed*=Math.exp(-(terrain.resistance+.012*Math.abs(s.speed)+Math.min(2.2,depth*.85))*dt);
+ const lateralLimit=4.5*grip/Math.max(1,Math.abs(s.speed));const yaw=clamp(s.speed*Math.tan(s.steer)/3.3*grip/(1+depth*.18),-lateralLimit,lateralLimit);s.heading+=yaw*dt;
  const oldX=s.x,oldZ=s.z;const previous=Number.isFinite(s.motionHeading)?s.motionHeading:s.heading;s.motionHeading=previous+Math.atan2(Math.sin(s.heading-previous),Math.cos(s.heading-previous))*(1-Math.exp(-dt*(12*grip)/(1+depth*.4)));s.x+=Math.sin(s.motionHeading)*s.speed*dt;s.z+=Math.cos(s.motionHeading)*s.speed*dt;
  // Sweep each small step against solid scenery. An overlapping saved position
  // gets a bounded outward nudge, never a projection across an entire boulder.
@@ -56,5 +56,5 @@ function step(s,input,dt,height,obstacles=[]){
  limitTravel(s);s.travel+=Math.abs(s.speed)*dt;s.wheelSpin+=s.speed*dt/.48;
  return s;
 }
-const api={spawn,step,clamp};if(typeof module!=='undefined')module.exports=api;root.AmberPhysics=api;
+const api={spawn,step,clamp,toMPH:metresPerSecond=>Math.abs(metresPerSecond)*2.2369362920544};if(typeof module!=='undefined')module.exports=api;root.AmberPhysics=api;
 })(typeof window==='undefined'?globalThis:window);
