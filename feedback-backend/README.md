@@ -26,3 +26,5 @@ The Supabase advisor's informational “RLS enabled, no policy” finding is exp
 ## Verification
 
 No fake reviews were posted to production. `test-feedback-db.cjs` runs setup and submission tests in isolated PGlite PostgreSQL, including validation, duplicate retries, both rate limits, direct-table denial, filtered reads, private fields and moderation. Browser tests intercept all Supabase traffic. Production checks verify schema/constraints, function permissions, security advisors and read-only results as `anon`.
+
+Summit Run uses the `train` game selector. Migration `allow_summit_run_feedback` widens only the existing game constraint and submission validator; no feedback rows or permissions are changed. Its submission/filter path is tested in the isolated database, never with fake live reviews.
