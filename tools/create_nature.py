@@ -22,6 +22,13 @@ class Mesh:
  def leaf(self,p,length,width,angle,tilt,mat):
   p=Vector(p);u=Vector((math.cos(angle)*math.cos(tilt),math.sin(angle)*math.cos(tilt),math.sin(tilt)));v=Vector((-math.sin(angle),math.cos(angle),.12));a=p-u*length*.5;b=p+u*length*.5;l=p+v*width*.5;r=p-v*width*.5;mid=p+Vector((0,0,width*.16))
   for q in [(a,l,b),(a,b,r)]:self.face(q,mat)
+ def crown(self,p,r,mat,lod=False):
+  p=Vector(p);n=7 if lod else 12;rings=4 if lod else 7
+  def point(i,j):
+   a=i/n*math.tau;b=-math.pi/2+j/rings*math.pi
+   return p+Vector((math.cos(a)*math.cos(b)*r,math.sin(a)*math.cos(b)*r*.85,math.sin(b)*r*.68))
+  for j in range(rings):
+   for i in range(n):self.face([point(i,j),point(i+1,j),point(i+1,j+1),point(i,j+1)],mat,True)
  def finish(self):
   me=bpy.data.meshes.new(self.name);me.from_pydata(self.v,[],self.f);me.update();obj=bpy.data.objects.new(self.name,me);bpy.context.collection.objects.link(obj)
   for m in mats:me.materials.append(m)
@@ -36,17 +43,19 @@ def deciduous(name,birch=False,lod=False):
   m.tube((0,0,0),(0,0,11.7),.22,.025,trunk,5)
   for j in range(8):
    a=j*2.399;z=5+j*.75;r=(2.6 if not birch else 1.6)*(1-j/14);tip=Vector((math.cos(a)*r,math.sin(a)*r,z+1));m.tube((0,0,z-.8),tip,.075,.018,trunk,4)
-   for k in range(17):
-    ang=rng.random()*math.tau;rr=rng.random();p=tip+Vector((math.cos(ang)*rr,math.sin(ang)*rr,(rng.random()-.5)*1.2));m.leaf(p,.85+rng.random()*.4,.4+rng.random()*.2,rng.random()*math.tau,(rng.random()-.5)*.7,2+rng.randrange(3))
+   m.crown(tip,1.25 if not birch else 1.0,2+j%3,True)
+   for k in range(26):
+    ang=rng.random()*math.tau;rr=rng.random();p=tip+Vector((math.cos(ang)*rr,math.sin(ang)*rr,(rng.random()-.5)*1.2));m.leaf(p,1.15+rng.random()*.5,.65+rng.random()*.2,rng.random()*math.tau,(rng.random()-.5)*.7,2+rng.randrange(3))
   return m.finish()
  for j in range(6):
-  a=(.13*math.sin(j*.6),.09*math.sin(j),j*1.85);b=(.13*math.sin((j+1)*.6),.09*math.sin(j+1),(j+1)*1.85);m.tube(a,b,.24*(1-j/7),.24*(1-(j+1)/7),trunk,5 if lod else 7)
+  a=(.13*math.sin(j*.6),.09*math.sin(j),j*1.85);b=(.13*math.sin((j+1)*.6),.09*math.sin(j+1),(j+1)*1.85);m.tube(a,b,.43*(1-j/7),.43*(1-(j+1)/7),trunk,5 if lod else 7)
  for j in range(11):
   angle=j*2.399;z=4+j*.56;reach=(2.6 if not birch else 1.7)*(1-j/17);a=Vector((0,0,z));end=Vector((math.cos(angle)*reach,math.sin(angle)*reach,z+1.8));m.tube(a,end,.095*(1-j/16),.02,trunk,4 if lod else 6)
+  m.crown(end+Vector((0,0,.3)),1.5 if not birch else 1.15,2+j%3)
   for k in range(3):
    aa=angle+(k-1)*.65;tip=end+Vector((math.cos(aa)*.7,math.sin(aa)*.7,.3+k*.12));m.tube(end-Vector((0,0,.3)),tip,.024,.009,trunk,4)
-   for leaf in range(6 if lod else 23):
-    az=rng.random()*math.tau;rr=math.sqrt(rng.random())*.85;pos=tip+Vector((math.cos(az)*rr,math.sin(az)*rr,(rng.random()-.5)*1.05));m.leaf(pos,.55+rng.random()*.3,.28+rng.random()*.16,rng.random()*math.tau,(rng.random()-.5)*1.1,2+rng.randrange(3))
+   for leaf in range(6 if lod else 36):
+    az=rng.random()*math.tau;rr=math.sqrt(rng.random())*.85;pos=tip+Vector((math.cos(az)*rr,math.sin(az)*rr,(rng.random()-.5)*1.05));m.leaf(pos,.9+rng.random()*.4,.5+rng.random()*.22,rng.random()*math.tau,(rng.random()-.5)*1.1,2+rng.randrange(3))
  return m.finish()
 def conifer(name,lod=False):
  rng=random.Random(52);m=Mesh(name);m.tube((0,0,0),(.12,.08,13),.27,.025,0,5 if lod else 8)
