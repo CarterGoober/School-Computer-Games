@@ -51,11 +51,12 @@ The published Sites build uses a Cloudflare Worker and D1 binding **DB**. `.open
 ```sh
 node hosting/test-migrations.cjs
 node hosting/build.cjs
+node hosting/package.cjs work/hosted-release.tar.gz
 ```
 
 For a disposable local hosted-adapter preview, use **Node 22+** and run `node hosting/preview.mjs` after building; it listens on http://127.0.0.1:8005 and applies the exact Drizzle journal in memory. The Node game server itself still supports Node 18+.
 
-The artifact is `dist/server/index.js`, with `dist/.openai/hosting.json` and `dist/drizzle/`. Include the migration SQL **and** `drizzle/meta/_journal.json` in those output directories, together with the root hosting configuration in the deployment archive. Publish the exact committed source and apply both schema migrations through the hosting deployment flow. `drizzle/0001_shared_physics.sql` adds a singleton shared world without deleting the legacy `hill_players` table. Existing legacy positions are imported on reconnect.
+The artifact is `dist/server/index.js`, with `dist/.openai/hosting.json` and `dist/drizzle/`. The package helper includes migration SQL **and** `drizzle/meta/_journal.json` at the **archive root**, together with the Worker output and root hosting configuration. Sites discovers migrations separately from the Worker entrypoint; putting them only under `dist/` skips them. Publish the exact committed source and apply both schema migrations through the hosting deployment flow. `drizzle/0001_shared_physics.sql` adds a singleton shared world without deleting the legacy `hill_players` table. Existing legacy positions are imported on reconnect.
 
 Every exchange atomically commits the **entire shared physics checkpoint** using a D1 revision compare-and-swap. Concurrent requests retry against the winning world revision, so independently updated cars cannot overwrite each other's collision results. Input requests also return a full snapshot; this avoids a second snapshot polling request. The Worker advances fixed physics steps on active requests and retains the world while idle; it is not a dedicated continuously ticking game process. Internet RTT and database latency affect exchange frequency. The configured limit is 24 sessions, not a load-tested capacity guarantee. A dedicated Node process is preferable for consistently low-latency physics at larger concurrency.
 
