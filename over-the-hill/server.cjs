@@ -25,7 +25,7 @@ if(url.pathname.startsWith('/over-the-hill/api/')){
 if(req.method!=='GET'&&req.method!=='HEAD'){res.writeHead(405);res.end();return;}
 let pathname;try{pathname=decodeURIComponent(url.pathname);}catch{res.writeHead(400);res.end();return;}
 if(pathname.includes('\0')){res.writeHead(400);res.end();return;}
-if(pathname.endsWith('/'))pathname+='index.html';const target=path.resolve(ROOT,'.'+pathname),relative=path.relative(ROOT,target);const ext=path.extname(target).toLowerCase();const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.webmanifest':'application/manifest+json'};
+if(pathname.endsWith('/'))pathname+='index.html';const target=path.resolve(ROOT,'.'+pathname),relative=path.relative(ROOT,target);const ext=path.extname(target).toLowerCase();const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.glb':'model/gltf-binary','.webmanifest':'application/manifest+json'};
 if(relative.startsWith('..')||relative.split(path.sep).some(p=>p.startsWith('.')||p==='work'||p==='node_modules')||!mime[ext]){res.writeHead(404);res.end('Not found');return;}
 fs.readFile(target,(err,data)=>{if(err){res.writeHead(404);res.end('Not found');return;}res.writeHead(200,{'Content-Type':mime[ext],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'});res.end(req.method==='HEAD'?undefined:data);});
 });

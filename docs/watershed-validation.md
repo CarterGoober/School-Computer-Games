@@ -8,3 +8,9 @@
 - Offline: checked the flagship link, existing game links and a service-worker-cached world launching solo without a map. Existing old game, shop, wallet and progression implementation files are unchanged by this expansion.
 
 Headless Chromium used CPU-based SwiftShader: approximately 13–38 FPS across the seven inspected locations, with forest scenes the heaviest. Physical Chromebook performance and full-capacity multiplayer load remain unverified. Water reflections are an inexpensive sky approximation, not full scene reflections. Vehicle suspension/traction and buoyancy are lightweight game approximations, not a rigid-body fluid solver.
+
+## Subsequent Blender scenery pass
+
+All 11 model roots and their real vertex/normal data were checked in the GLB; the editable Blender source was validated. Seven locations and ~6.7 km of browser driving passed with the new Three.js renderer. The same two-client Worker-preview and offline suites passed again after moving the network heartbeat out of the rendering loop.
+
+The full-detail CPU-rendered scene was slow (2–5 FPS). The final software fallback reduced the spawn scene to 184,031 triangles / 153 draw calls, measured at roughly 6.7 FPS. No claim of smooth Chromebook hardware performance is made. Actual hardware and 24-player load profiling remain unverified.
