@@ -71,7 +71,12 @@ api.draw=function(groups,eye,yaw,pitch,width,height,dpr,range,actors=[]){if(!rea
  let vehicleIndex=0,dynamicIndex=0;for(const actor of actors){if(actor.state){vehicleRig(vehicleIndex++,actor.state);continue;}if(!actor.faces.length)continue;const geo=geometry(actor.faces);if(!dynamic[dynamicIndex]){dynamic[dynamicIndex]=new T.Mesh(geo,solid);scene.add(dynamic[dynamicIndex]);}else{dynamic[dynamicIndex].geometry.dispose();dynamic[dynamicIndex].geometry=geo;}dynamic[dynamicIndex++].visible=true;}for(let i=dynamicIndex;i<dynamic.length;i++)dynamic[i].visible=false;for(let i=vehicleIndex;i<vehicles.length;i++)vehicles[i].group.visible=false;
 
  if(car&&(!lastLight||frame%8===0&&Math.hypot(car.x-lastLight.x,car.z-lastLight.z)>1)){const x=Math.round(car.x/4)*4,z=Math.round(car.z/4)*4,y=car.y||0;sun.position.set(x-120,y+145,z+120);sun.target.position.set(x,y,z);sun.target.updateMatrixWorld();lastLight={x:car.x,z:car.z};gl.shadowMap.needsUpdate=true;}
- gl.render(scene,camera);api.stats.draws=gl.info.render.calls;api.stats.triangles=gl.info.render.triangles;return gl.info.render.triangles;};
+ api.drawTowCables(actors);gl.render(scene,camera);api.stats.draws=gl.info.render.calls;api.stats.triangles=gl.info.render.triangles;return gl.info.render.triangles;};
+const cableLines=new Map();
+api.drawTowCables=function(actors){const states=new Map(actors.filter(a=>a.state).map(a=>[a.state.physicsKey,a.state])),active=new Set();function point(state,end){const p=new T.Vector3(0,.15,end==='front'?2.25:-2.25).applyQuaternion(new T.Quaternion(...state.q));return p.add(new T.Vector3(state.x,state.y,state.z));}
+ for(const cable of api.cables||[]){const a=states.get(cable.a),b=states.get(cable.b);if(!a||!b)continue;active.add(cable.id);let line=cableLines.get(cable.id);if(!line){const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(new Float32Array(17*3),3));line=new T.Line(geo,new T.LineBasicMaterial({color:'#b4b5a3',depthTest:true}));line.frustumCulled=false;scene.add(line);cableLines.set(cable.id,line);}const start=point(a,cable.endA),end=point(b,cable.endB),distance=start.distanceTo(end),sag=Math.min(2,Math.sqrt(Math.max(0,cable.length*cable.length-distance*distance))*.12),positions=line.geometry.attributes.position;for(let i=0;i<=16;i++){const t=i/16,x=start.x+(end.x-start.x)*t,z=start.z+(end.z-start.z)*t,y=start.y+(end.y-start.y)*t-sag*Math.sin(Math.PI*t);positions.setXYZ(i,x,Math.max(y,window.AmberWorld.height(x,z)+.04),z);}positions.needsUpdate=true;line.visible=true;}
+ for(const[id,line]of cableLines)if(!active.has(id)){scene.remove(line);line.geometry.dispose();line.material.dispose();cableLines.delete(id);}
+};
 api.projectWorld=p=>new T.Vector3(-p.x,p.y,p.z).project(camera);
 return api;
 };
