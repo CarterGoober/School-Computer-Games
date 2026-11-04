@@ -2,7 +2,7 @@ const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:
 const sharedAPI=HillSession(AmberPhysics,{height,obstacles,nearest,spawnPoint,WORLD_ID});
 let hostedScene=null;
 async function api(request,env){const url=new URL(request.url),route=url.pathname.split('/').pop(),db=env.DB;if(!db)return json({error:'World storage unavailable'},503);if(request.headers.get('Origin')&&request.headers.get('Origin')!==url.origin)return json({error:'Same origin required'},403);
- if(route==='health')return json({world:WORLD_ID,storage:'D1',transport:'exchange',physics:'shared-rigid-120hz'});
+ if(route==='health')return json({world:WORLD_ID,storage:'D1',transport:'exchange',physics:'shared-rigid-120hz',transmission:'six-speed-manual',bounds:BOUNDS});
  if(!['join','input','snapshot','action','leave'].includes(route))return json({error:'Not found'},404);
  if(request.method!=='POST'&&route!=='snapshot')return json({error:'POST required'},405);
  let b={};if(request.method==='POST'){const raw=await request.text();if(raw.length>12000)return json({error:'Too large'},413);try{b=JSON.parse(raw);}catch{return json({error:'Invalid request'},400);}}else b.token=url.searchParams.get('token');

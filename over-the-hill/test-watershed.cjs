@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),W=require('./world.js'),P=require('./physics.js');
-const digest=()=>JSON.stringify(Array.from({length:200},(_,i)=>{const x=-3900+i*39,z=-1900+(i*113)%7800;return [W.height(x,z),W.waterAt(x,z),W.candidates(Math.floor(x/128),Math.floor(z/128))];}));const a=digest();assert.equal(digest(),a,'fixed geography and decoration');assert.equal(W.regions.length,8);assert(W.landmarks.length>=25);assert(W.route.length>3000);assert.deepEqual([P.spawn(W.height).x,P.spawn(W.height).z],[0,0]);
+const digest=()=>JSON.stringify(Array.from({length:200},(_,i)=>{const x=-3900+i*39,z=-1900+(i*113)%7800;return [W.height(x,z),W.waterAt(x,z),W.candidates(Math.floor(x/128),Math.floor(z/128))];}));const a=digest();assert.equal(digest(),a,'fixed geography and decoration');assert.equal(W.regions.length,16);assert(W.landmarks.length>=25);assert(W.route.length>3000);assert.deepEqual([P.spawn(W.height).x,P.spawn(W.height).z],[0,0]);
 let length=0;for(let i=1;i<W.route.length;i++)if(W.route[i].road===W.route[i-1].road)length+=Math.hypot(W.route[i].x-W.route[i-1].x,W.route[i].z-W.route[i-1].z);console.log('Authored roads',Math.round(length/1000)+' km; landmarks',W.landmarks.length);
 const measurements=[];
 for(const road of [0,1,2,3,4]){const points=W.route.filter(p=>p.road===road);let index=0,s=P.spawn(W.height,points[0].x,points[0].z,Math.atan2(points[2].x-points[0].x,points[2].z-points[0].z)),maxError=0,maxPitch=0;const maxTicks=points.length*210;let tick=0;

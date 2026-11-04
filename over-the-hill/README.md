@@ -1,6 +1,6 @@
 # Over the Hill — Ashen Vale
 
-A peaceful 3D expedition in Afterclass Garage. One original, Blender-built Wren 88 wagon explores a fixed 8 × 8 km watershed: autumn woods, evergreen wilderness, meadows, canyons, lakes, highland passes and snowy ridges. Authored roads, shorelines and landmarks have identical positions for everyone. Spatial streaming changes detail and visibility, never the world layout.
+A peaceful 3D expedition in Afterclass Garage. One original, Blender-built Wren 88 wagon explores a fixed 16 × 16 km watershed: autumn woods, evergreen wilderness, meadows, canyons, lakes, highland passes and snowy ridges. 133 km of authored roads, eight lakes and 67 discoveries, shorelines and landmarks have identical positions for everyone. Spatial streaming changes detail and visibility, never the world layout.
 
 Play: **https://afterclass-garage-ashen-vale.adoredcarat1.chatgpt.site/over-the-hill/**
 
@@ -18,21 +18,24 @@ Choose a temporary name and one of the three previewed starting locations, then 
 
 ## Controls
 
-- **W / Up** accelerate; **S / Down** service brake, then reverse.
+- **W / Up** throttle in the selected direction; **S / Down** service brake.
+- **1–6** select forward gears; **Right Shift** selects reverse. The automatic clutch briefly interrupts torque on shifts. Unsafe reverse/downshifts are rejected; brake first. Touch controls provide − / + and R.
 - **A / Left** turns left; **D / Right** turns right.
 - **Space** toggles the rear-wheel parking brake. Release it before driving; the small PARKING BRAKE indicator shows its state. The touch STOP button toggles the same brake.
 - **R** recovers onto a nearby trail. Pause → Return to trailhead resets only the wagon.
 - Drag mouse/touchpad/touch to orbit through 360°; scroll to zoom. Auto-center is optional. **C** changes chase distance.
 - **Esc / P** pauses. Pausing applies tire brakes; gravity, collisions and towing continue on the server.
 - **Enter** opens/sends chat; **Esc** closes chat. Typing does not steer the wagon.
-- **People** lists nearby explorers, tow requests, Mute and Report. **Winch** selects your bumper and the target bumper. Request a connection in People; the target must Accept.
+- **People** lists nearby explorers, tow requests, Mute and Report. **Winch** selects your bumper and the target bumper. Click a nearby floating username to request a connection, or use People with your selected bumper anchors. The target presses **Right Ctrl** or the small Accept button. Left Ctrl does not accept; typing in chat cannot accept or shift.
 - **E / Q** reel the cable in/out; **X** disconnects. Touch buttons support holding the reel controls. Either connected player can disconnect; only the requester controls reeling.
 
-The HUD retains mph/gear, optional controls and small multiplayer buttons. Location captions hold briefly and fade away. Driving hints disappear after learning. Graphics cycle low/balanced/high with adaptive resolution; sound defaults off. Focus loss clears driving inputs and applies brakes. Parking applies friction, never a frozen transform: sufficient towing, impacts or a steep slope can move the car.
+The HUD retains mph/gear, optional controls and small multiplayer buttons. Location captions hold briefly and fade away. Driving hints disappear after learning. Graphics cycle Low/Balanced/High/PC Ultra with adaptive resolution; sound defaults off. Focus loss clears driving inputs and applies brakes. Parking applies friction, never a frozen transform: sufficient towing, impacts or a steep slope can move the car.
 
 ## Shared physics and synchronization
 
-`physics.js` uses vendored MIT-licensed cannon-es 0.20.0. All dynamic wagons share **one** six-degree-of-freedom rigid-body scene under `(0,-9.81,0)` gravity, with 1,500 kg compound chassis colliders and four raycast suspension contacts. Suspension springs/damping, tire impulses, braking, speed-sensitive steering, rolling resistance, water drag and bounded partial buoyancy act through forces/impulses. Vehicles can bump, push, block, become airborne and overturn. R is available for recovery. Wheels are attached raycast mechanisms, not separate loose tire bodies.
+`physics.js` uses vendored MIT-licensed cannon-es 0.20.0. All dynamic wagons share **one** six-degree-of-freedom rigid-body scene under `(0,-9.81,0)` gravity, with 1,500 kg compound chassis colliders and four raycast suspension contacts. Suspension springs/damping, tire impulses, braking, speed-sensitive steering, rolling resistance, water drag and bounded partial buoyancy act through forces/impulses. Vehicles can bump, push, block, become airborne and overturn. R is available for recovery. Wheels are attached raycast mechanisms, not separate loose tire bodies. Four compressed-tire envelope colliders provide physical bump stops when suspension bottoms out.
+
+Six manual ratios provide progressively lower wheel torque and higher road speed. On the flat test course, settled speeds are approximately 9.6/14.3/19.1/23.5/32.3/37.7 mph; fourth retains the former top-speed curve. First supplies climbing torque, fifth and sixth need momentum, and engine braking remains force based. SI physics speed is converted with 2.236936 for mph. An acknowledged rejected shift restores the server gear and clutch state without snapping the vehicle.
 
 Nearby terrain heightfields use the same 2 m samples as terrain geometry. Trees, rocks, logs, structures and rails have simplified fixed colliders. Collision neighborhoods are shared and bounded across all nearby players. Grass, soil, rock, gravel, sand and shallow water retain different traction/resistance. Cosmetic splashes, ripples and tracks are reconstructed locally from synchronized movement.
 
@@ -84,7 +87,7 @@ Inputs older than 900 ms apply parking friction; sessions expire after eight sec
 
 The original editable sources are `wren.blend` and `nature.blend`. Rebuild using `blender --background --python tools/create_vehicle.py` or `tools/create_nature.py` from the repository root. Runtime GLBs contain independently animated wheels, axles, springs, shocks, arms and steering links, plus full/reduced-detail trees and scenery. These visual mechanisms follow suspension state; they are not a full joint-based suspension solver. No models were extracted from the reference screenshots or commercial games.
 
-Smooth terrain normals and continuous world-coordinate grass/soil/rock/sand colors avoid random triangle patches. Fixed-world cells are built in `stream-worker.js`, with transferable typed arrays, a preload ring, bounded geometry upload and shader preparation. Nearby selected spawn cells load ahead of the coarse backdrop. Trees use instancing/LOD and subtle movement. Renderer detail and resolution adapt to load; no entire-world high-detail render is created. The sky and water reflections are lightweight approximations. Three.js and cannon-es are vendored with their license notices; no external CDN is required at runtime.
+Smooth terrain normals and continuous world-coordinate grass/soil/rock/sand colors avoid random triangle patches. Fixed-world cells are built in `stream-worker.js`, with transferable typed arrays, a preload ring, bounded geometry upload and shader preparation. Nearby selected spawn cells load ahead of the coarse backdrop. Trees use instancing/LOD and subtle movement. High/PC Ultra retain 72 coarse horizon tiles over the finite world, middle terrain/forest bands and bounded 2 m near terrain; only nearby scenery gets expensive detail. New roads use broad cut/fill valleys instead of narrow terrain trenches. Renderer detail and resolution adapt to load; no entire-world high-detail render is created. The sky and water reflections are lightweight approximations. Three.js and cannon-es are vendored with their license notices; no external CDN is required at runtime.
 
 Garage save keys, currency, shop, original game profiles, Summit Run and discovery key `hill-journal-v1` are unchanged. `hill-session-v1` retains the reconnect token; `hill-muted-v1` stores only local mute choices. Browser saves remain tied to the website origin and do not automatically transfer between hosts. No runtime save file or credential belongs in the deployment archive.
 
@@ -93,6 +96,13 @@ Garage save keys, currency, shop, original game profiles, Summit Run and discove
 Run from the repository root:
 
 ```sh
+node over-the-hill/test-manual.cjs
+node over-the-hill/test-transmission-reconciliation.cjs
+node over-the-hill/test-control-order.cjs
+node over-the-hill/test-winch-controls.cjs
+node over-the-hill/test-winch-authority.cjs
+node --test over-the-hill/test-world-expansion.cjs over-the-hill/test-world-streaming.cjs
+node over-the-hill/test-world-drives.cjs
 node over-the-hill/test-multiplayer2.cjs
 node over-the-hill/test-network.cjs
 node over-the-hill/test-server.cjs
@@ -106,6 +116,6 @@ node over-the-hill/test-mp2-browser.cjs
 node over-the-hill/test-offline.cjs
 ```
 
-The multiplayer browser test uses independent browser contexts, real input/actions, injected HTTP latency and dropped input requests. `TEST_BASE_URL` selects a local Node or Worker preview. Detailed measurements and remaining limitations are in [docs/multiplayer-2-validation.md](../docs/multiplayer-2-validation.md). Software Chromium measurements are not a Chromebook hardware benchmark. Physical Chromebook frame rates, full 24-player load, long-duration Internet behavior and comprehensive moderation remain unverified.
+The multiplayer browser test uses independent browser contexts, real input/actions, injected HTTP latency and dropped input requests. `TEST_BASE_URL` selects a local Node or Worker preview. Current world/manual results are in [docs/world-manual-validation.md](../docs/world-manual-validation.md). Detailed earlier multiplayer measurements and remaining limitations are in [docs/multiplayer-2-validation.md](../docs/multiplayer-2-validation.md). Software Chromium measurements are not a Chromebook hardware benchmark. Physical Chromebook frame rates, full 24-player load, long-duration Internet behavior and comprehensive moderation remain unverified.
 
 Earlier world and asset validation: [geography](../docs/ashen-vale-geography.md), [streaming/model upgrade](../docs/wren-streaming-validation.md), [rigid-body validation](../docs/rigid-validation.md). Some historical test scripts assumed terrain snapping, non-colliding cars or an older cache name; current physics/network tests cover the replacement behavior.

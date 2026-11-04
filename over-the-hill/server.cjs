@@ -13,7 +13,7 @@ const streams=new Map(),timings=[];
 const server=http.createServer(async(req,res)=>{const url=new URL(req.url,'http://localhost');if(url.pathname==='/over-the-hill'){res.writeHead(308,{Location:'/over-the-hill/'});res.end();return;}
 if(url.pathname.startsWith('/over-the-hill/api/')){if(req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`&&req.headers.origin!==`https://${req.headers.host}`){json(res,403,{error:'Same-origin required'});return;}
 try{const route=url.pathname.split('/').at(-1),now=Date.now();session.advance(now);
-if(route==='health'){const sorted=timings.slice().sort((a,b)=>a-b);json(res,200,{world:W.WORLD_ID,players:Object.keys(session.state.players).length,persistent:true,physics:'shared-rigid-120hz',stepP95:sorted[Math.floor(sorted.length*.95)]||0});return;}
+if(route==='health'){const sorted=timings.slice().sort((a,b)=>a-b);json(res,200,{world:W.WORLD_ID,players:Object.keys(session.state.players).length,persistent:true,physics:'shared-rigid-120hz',transmission:'six-speed-manual',bounds:W.BOUNDS,stepP95:sorted[Math.floor(sorted.length*.95)]||0});return;}
 if(route==='events'){const token=url.searchParams.get('token'),p=session.player(token);streams.get(token)?.end();streams.set(token,res);res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});res.write('retry: 1000\n\n');res.write('data: '+JSON.stringify(session.snapshot(now))+'\n\n');res.on('close',()=>{if(streams.get(token)===res)streams.delete(token);});return;}
 if(route==='snapshot'){session.player(url.searchParams.get('token'));json(res,200,session.snapshot(now));return;}
 if(req.method!=='POST'){json(res,405,{error:'POST required'});return;}const b=await body(req);

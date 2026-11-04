@@ -172,7 +172,7 @@ TEST_BASE_URL=http://127.0.0.1:8000 node test-shop-browser.cjs
 
 ### Over the Hill: fixed watershed and shallow water
 
-The featured game now uses one fixed 8 × 8 km watershed, about 30 km of connected scenic routes, eight regions and 26 discoveries. Five authored lakes/ponds and a downhill river share the same terrain and surface physics on every client and server. Sand, gravel and water affect driving; shallow-water ripples and splashes follow synchronized wagons. The map HUD has been removed. See [the game guide](over-the-hill/README.md) for launch/hosting instructions and [the geography plan](docs/ashen-vale-geography.md) for the fixed layout and streaming approach. Existing games and Garage storage keys are unchanged.
+The featured game now uses one fixed 16 × 16 km watershed, 133 km of connected scenic routes, 16 regions and 67 discoveries. Eight authored lakes/ponds and a downhill river share the same terrain and surface physics on every client and server. Sand, gravel and water affect driving; shallow-water ripples and splashes follow synchronized wagons. The map HUD has been removed. See [the game guide](over-the-hill/README.md) for launch/hosting instructions and [the geography plan](docs/ashen-vale-geography.md) for the fixed layout and streaming approach. Existing games and Garage storage keys are unchanged.
 
 
 
