@@ -188,3 +188,55 @@ NODE_PATH=/tmp/garage-db-tests/node_modules node test-feedback-db.cjs
 ```
 
 Physics tests cover downhill movement, brake priority, increasing pace, on-rail restriction, manual/automatic jumping, midair transfers, landing failures, rocks, bounded memory, and twelve three-minute runs using normal inputs across seeds and throttle/coast/brake strategies. Rewards tests cover current scaling, successful landings, milestones, record thresholds, deduplication and unchanged existing profiles. Actual Chromium checks cover keyboard play, forced transfers, pause/blur, records/reload, wallet updates, real portrait/landscape and simultaneous touch controls, offline play/shop access, and day/sunset/night screenshots. Browser checks use isolated local profiles. No physical Chromebook hardware benchmark is claimed.
+
+## The Trenches — freshman offensive-line football
+
+Open `trenches.html` from the sixth game card in Afterclass Garage. This is an original fan-made Little Elm freshman Navy/Gold game, not an official school product. It uses no official logos or unverified real matchups. The previous five game routes, collections, and wallet profiles remain intact.
+
+- **Controls:** read the QB call, press **Space** in the moving gold snap zone, then **→ for 22**, **← for 23**, or **↓ for 55**. Assignment inputs before snapping do nothing. The first post-snap assignment locks in. React to each timed arrow to reinforce leverage or pick up an edge/interior blitz; ↓ holds the pocket against a fake. **Escape** pauses; Space/Enter advances play results. On-screen buttons also support touch.
+- **Modes:** Freshman Season, Quick Game, five practice drills (five reps each), and single-player Navy vs. Gold scrimmage. Practice grades gradually add a capped +8 game-rating bonus per team. Strength, footwork, awareness, run blocking, pass protection, and stamina are editable fictional gameplay values; everyone begins at 70.
+- **Season:** eight explicitly fictional practice matchups, including two rivalry weeks. One selected team's season is stored at a time. Switching the season team or starting another season requires an explicit replacement choice. Wins, losses, ties, game scores, line grades, yards, pancakes and blitz pickups persist. No official freshman schedule, playoff eligibility, college recruiting, or multi-year career is asserted.
+- **Football format:** four 90-second arcade quarters, four downs for ten yards (or the goal line), touchdowns with automatic extra points, safeties, punts and guaranteed short-range field goals when at/inside the opponent's 40 on fourth down. The game clock advances by simulated play/possession duration at the whistle. Opponent possessions are simulated. No new possession occurs after fourth-quarter time expires. Ties stand; there is no overtime. Blocking is a skill-driven hybrid with positional engagement, resistance, sheds, timed reinforcement, and animated lane/pocket movement; it is not a full contact-physics simulation. Defense, kick returns, penalties, manual passing/ballcarrier controls, and multiplayer are not playable.
+- **Rendering:** original programmatic pixel sprites, coordinated run footwork/pass kick sets, stamina bars, helmets, editable jersey numbers, pancake/shed feedback, animated crowd, stadium lights, original wolf/star/mountain marks, and navy/gold/white uniforms. A fixed 120 Hz simulation feeds requestAnimationFrame rendering with cached scenery; 60 FPS is a target, not a guarantee for every device.
+- **Audio:** Sound toggles synthesized crowd ambience, snap tones and whistles. Optional QB speech uses browser/device speech synthesis and depends on local voice availability.
+- **Saving:** `afterclass-trenches-v1` is independent of the shared Garage wallet. Active games save approximately once per second and when pausing/leaving; Continue restores their phase. Invalid saves fall back safely. Storage failure is displayed, with a session-only fallback. Saves do not sync across browsers/devices. Match/drill completion credits `Progression.awardGarage('trenches', ...)` with an idempotent receipt. At the existing economy multiplier, base rewards are `40 + round(lineGrade / 2)` per match and `round(lineGrade / 5)` per drill. Starting a different exhibition/drill replaces the one resumable game, while retaining season standings.
+- **Offline:** the new route, scripts, styles and cover are included in service-worker cache v18. Visit the hub and wait for **OFFLINE READY** before disconnecting.
+
+### Roster privacy and known information
+
+Public source ships aliases only. The supplied real-name roster is delivered separately at `/workspace/private-rosters/little-elm-private-roster.json`, outside this repository and its offline cache. In **View & edit your roster**, choose **Import roster JSON**, select that file, then enable **Show imported private names on this device**. This stores names only in this browser. Anyone using the same browser can see them; use names only with player permission. **Remove private names** deletes the game's stored name mapping. **Export aliases & ratings** excludes that mapping and disables private-name display in its output. Do not publish a manually edited alias containing a student's name without permission.
+
+Gold preserves the supplied C/RG/RT/LG assignments. Its fifth supplied player is recorded as **Tackle — side unconfirmed**, leaving LT anonymous until edited. Navy has its supplied center and five position-TBD players; unassigned field slots use anonymous stand-ins. All real jersey numbers remain blank until supplied. The renderer displays temporary 01–05 slot numbers marked TMP (QB/RB use TMP 00); these are never stored as actual jersey numbers. Assigning an occupied position explicitly moves the previous player to TBD. Private-name editing changes the private mapping, while alias editing changes the public roster. Jersey names, numbers, positions and branding update immediately in the field preview and active game. Ratings affect subsequent new matches.
+
+### Trenches files and validation
+
+- `trenches.html` / `trenches.css`: viewport-fitted arcade home, separate live field, compact HUD, controls and functioning roster/practice/schedule/settings screens.
+- `trenches-core.js`: seeded football/blocking state machine and match/drill progression.
+- `trenches-data.js`: roster validation, private import, safe export, training, season results and versioned saves.
+- `trenches-art.js`: field-level perspective projection, cached stadium and large original animated Canvas players with jersey nameplates.
+- `trenches.js`: input, menus, sound, persistence and shared-wallet integration.
+- `trenches-cover.svg`: original hub illustration.
+- `trenches-pixel.ttf` / `tools/build-trenches-font.py`: bundled original 5×7 pixel typeface and reproducible development-only FontTools generator. No font network requests or new game runtime libraries.
+- `index.html`, `hub.css`, `sw.js`: sixth game card, hub copy and offline cache registration.
+
+Run from a static server, for example `python3 -m http.server 8000`:
+
+```sh
+node test-trenches.cjs
+node test-trenches-data.cjs
+TEST_BASE_URL=http://127.0.0.1:8000 node test-trenches-browser.cjs
+TEST_BASE_URL=http://127.0.0.1:8000 node test-trenches-redesign-browser.cjs
+TEST_BASE_URL=http://127.0.0.1:8000 node test-trenches-menu-browser.cjs
+```
+
+Node tests cover snap grades, post-snap ordering, all assignments, physical engagements, pockets/lanes, pancakes/sacks, pre-snap pressure, blitz pickups, downs/scoring/kicks, regulation expiry, complete games, all drills, roster privacy/validation, unknown positions/numbers, rating bounds, season wins/losses/ties/deduplication, negative-yard save restoration, malformed saves, and blocked storage. Chromium tests cover real keyboard/touch controls, active engagement and pickup, pause and replacement-modal freeze, roster edit/import/reload, privacy-safe export, a complete eight-week season through legal simulation inputs, persisted shared rewards, practice training, scrimmage selection, mobile layout and all six games offline. Test fixtures use isolated browser profiles and never post live feedback. Screenshots are written to `/tmp/trenches-review`.
+
+### Arcade home and field-level redesign
+
+The home screen now fits a single viewport, with team selection, an interactive eight-week timeline, the upcoming practice matchup, previous result, local Navy/Gold records, line grade, game-only chemistry, pancakes, an animated field preview and a bottom action bar. Detailed rosters, practice, schedule/statistics, settings and the playbook open as separate menu screens. Continue resumes the current save; choosing a drill in Practice explicitly starts a new five-rep drill. Arrow keys select bottom-menu actions, and native Enter/Space activates focused buttons. Gameplay hotkeys continue to work when controlling the field. Menus pause active play.
+
+The new camera projects the field and players from ground level directly behind the quarterback. Offensive backs face the camera; defenders show facemasks; the center starts directly ahead of the QB. Sprite size scales with depth. Jersey nameplates use the existing privacy-aware name mapping; formatting does not hardcode any student identity. The roster editor applies names, numbers and positions to rendering immediately. The requested navy/blue/gold/orange/green palette replaces the washed-out presentation. The original pixel font is cached offline.
+
+Additional Chromium checks cover 1440×900, 1280×720, 1024×768, 800×600 and 390×844 home layouts, including child-panel containment rather than just page overflow. They exercise timeline browsing without advancing the real week, every menu, native keyboard button activation during games, starting a different practice drill, live name/number edits, private nameplates toggled on/off, negative-yard v1 save restoration, perspective depth scaling and the font offline. Actual screenshots are saved in `/tmp/trenches-redesign`. Unrelated games are not redesigned.
+
+Redesign validation completed with 17 passing Node suites and six passing browser suites (hub, shop, train and three football suites). An existing shop-browser fixture could randomly own its later guaranteed-purchase target; that isolated fixture was stabilized without changing shop production code. Final screenshots: `/tmp/trenches-redesign/home-final.png`, `/tmp/trenches-redesign/gameplay-private.png`, `/tmp/trenches-redesign/mobile-home.png`.
