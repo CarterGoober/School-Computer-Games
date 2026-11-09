@@ -5,6 +5,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),mix=(a,b,t)=>a+(b-a)*t;
 const rand=n=>{const v=Math.sin(n*127.13+41.7)*43758.5453;return v-Math.floor(v);};
 const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 const WORLD_ID='ashen-vale-watershed-2',BOUNDS={minX:-8000,maxX:8000,minZ:-5000,maxZ:11000};
+const baked=globalThis.__ASHEN_FIXED_WORLD__?.world===WORLD_ID?globalThis.__ASHEN_FIXED_WORLD__:null;
 const hill=(x,z,cx,cz,rx,rz,h)=>h*Math.exp(-(((x-cx)/rx)**2+((z-cz)/rz)**2));
 // Keep the complete original 8 km watershed height function inside this box.
 const CORE={minX:-4000,maxX:4000,minZ:-2000,maxZ:6000};
@@ -54,6 +55,7 @@ function base(x,z){
 // Lay fixed switchbacks on the actual mountain face, solving terrain contours
 // instead of cutting a low, straight-grade trench through the ridge crest.
 function ridgeRoute(west){
+ if(baked)return baked.roads[west?5:6];
  const start=west?[-1900,3300]:[3750,2800],endZ=west?4900:5250,center=z=>west?-3020+150*Math.sin(z*.0014):2880+170*Math.sin(z*.0011+.5),endX=center(endZ),from=base(...start),to=base(endX,endZ),points=west?[start,[-2000,3290],[-2120,3280],[-2220,3280]]:[[1600,2700],[2100,2470],[2800,2450],[3450,2600],start];let previous=start[0];
  for(let i=1;i<=120;i++){const t=i/120,z=mix(start[1],endZ,t)+Math.sin(t*Math.PI*4)*500*Math.sin(t*Math.PI),target=mix(from,to,t),inside=center(z),outside=west?-1450:3950,roots=[];let best=outside,error=Infinity,oldX=outside,oldY=base(outside,z)-target;
   for(let j=1;j<=100;j++){const x=mix(outside,inside,j/100),y=base(x,z)-target;if(Math.abs(y)<error){best=x;error=Math.abs(y);}if(y*oldY<=0){let a=oldX,b=x;for(let k=0;k<16;k++){const m=(a+b)/2;if((base(a,z)-target)*(base(m,z)-target)<=0)b=m;else a=m;}roots.push((a+b)/2);}oldX=x;oldY=y;}
@@ -81,7 +83,8 @@ roads.push(
  [[3300,-2300],[3900,-3200],[4400,-3700],[5400,-4100],[6500,-3900],[7200,-3100],[7100,-2100],[6600,-1500]]
 );
 const roadNames=['Watershed circuit','Southwind loop','Alder crossroad','Crown traverse','Stillwater approach','Longback switchbacks','Eagleback switchbacks','Loch Bracken shore circuit','Blackfir and northwestern divide','Southwind long road','Eastern drovers road','Granite saddle traverse','Blueglass high road','Northern bell road','Ochre canyon rim'];
-const route=[];
+const route=baked?baked.route:[];
+if(!baked){
 for(let road=0;road<roads.length;road++){const knots=roads[road];for(let k=0;k<knots.length-1;k++){const a=knots[Math.max(0,k-1)],b=knots[k],c=knots[k+1],d=knots[Math.min(knots.length-1,k+2)],count=Math.ceil(Math.hypot(c[0]-b[0],c[1]-b[1])/8);for(let i=0;i<count;i++){const t=i/count,t2=t*t,t3=t2*t,v=j=>.5*(2*b[j]+(-a[j]+c[j])*t+(2*a[j]-5*b[j]+4*c[j]-d[j])*t2+(-a[j]+3*b[j]-3*c[j]+d[j])*t3),x=v(0),z=v(1);route.push({x,z,y:base(x,z),road,end:i===count-1&&k===knots.length-2});}}if(road>=7){const [x,z]=knots.at(-1);route.push({x,z,y:base(x,z),road,end:true});}}
 // Regrade only the added mountain roads for real wheel-driven climbing. The
 // former height follower could climb the >100% gradients at a few hairpins.
@@ -110,6 +113,7 @@ function roadEnvelope(sign,anchorsOnly=false,grade=.24){const values=new Map();f
 const coreFloor=roadEnvelope(1,false,.18),coreUpper=roadEnvelope(1,true,.18),coreLower=roadEnvelope(-1,true,.18);coreRoadAnchors=new Map();for(const points of addedRoads)for(const p of points)if(p.x>=CORE.minX&&p.x<=CORE.maxX&&p.z>=CORE.minZ&&p.z<=CORE.maxZ)coreRoadAnchors.set(p,clamp(coreFloor.get(p),-coreLower.get(p),coreUpper.get(p)));
 const lowerRoad=roadEnvelope(1),upperRoad=roadEnvelope(-1),anchorUpper=roadEnvelope(1,true),anchorLower=roadEnvelope(-1,true);
 for(const points of addedRoads)for(const p of points)p.y=clamp((lowerRoad.get(p)-upperRoad.get(p))*.5,-anchorLower.get(p),anchorUpper.get(p));
+}
 const bins=new Map();route.forEach((p,i)=>{const bx=Math.floor(p.x/64),bz=Math.floor(p.z/64);for(let x=bx-1;x<=bx+1;x++)for(let z=bz-1;z<=bz+1;z++){const key=x+','+z;if(!bins.has(key))bins.set(key,[]);bins.get(key).push(i);}});
 function nearest(x,z,full=false,legacy=false){let dist=Infinity,result=null,roadWeight=0,roadHeight=0;const ids=full?route.map((_,i)=>i):bins.get(Math.floor(x/64)+','+Math.floor(z/64))||[];for(const i of ids){const a=route[i],b=route[i+1];if(!b||a.road!==b.road||legacy&&a.road>=7)continue;const dx=b.x-a.x,dz=b.z-a.z,t=clamp(((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz),0,1),px=a.x+dx*t,pz=a.z+dz*t,d=(x-px)**2+(z-pz)**2;if((a.road===3||a.road>=5)&&d<900){const w=Math.exp(-d/30);roadWeight+=w;roadHeight+=mix(a.y,b.y,t)*w;}if(d<dist){dist=d;result={x:px,z:pz,y:mix(a.y,b.y,t),heading:Math.atan2(dx,dz),i};}}return result?{...result,surfaceY:roadWeight>1e-12?roadHeight/roadWeight:result.y,distance:Math.sqrt(dist)}:{distance:Infinity};}
 const spawnIds=['forest','ridge','beach'];
@@ -141,7 +145,8 @@ function terrainHeight(x,z){const p=nearest(x,z),added=p.i!==undefined&&route[p.
 // cut/fill displacement once on a 64 m grid; collision and worker geometry
 // then use the same cheap bilinear sample. Compact support keeps distant peaks
 // and the protected core outside the Crown repair unchanged.
-const landformGrid=(()=>{const step=64,minX=Math.floor((BOUNDS.minX-1900)/step)*step,maxX=Math.ceil((BOUNDS.maxX+1900)/step)*step,minZ=Math.floor((BOUNDS.minZ-1900)/step)*step,maxZ=Math.ceil((BOUNDS.maxZ+1900)/step)*step,nx=(maxX-minX)/step+1,nz=(maxZ-minZ)/step+1,extension=new Float32Array(nx*nz),crown=new Float32Array(nx*nz),spatial=new Map();
+function unpackGrid(text){return new Float32Array(Uint8Array.from(atob(text),c=>c.charCodeAt(0)).buffer);}
+const landformGrid=baked?{...baked.landformGrid,extension:unpackGrid(baked.landformGrid.extension),crown:unpackGrid(baked.landformGrid.crown)}:(()=>{const step=64,minX=Math.floor((BOUNDS.minX-1900)/step)*step,maxX=Math.ceil((BOUNDS.maxX+1900)/step)*step,minZ=Math.floor((BOUNDS.minZ-1900)/step)*step,maxZ=Math.ceil((BOUNDS.maxZ+1900)/step)*step,nx=(maxX-minX)/step+1,nz=(maxZ-minZ)/step+1,extension=new Float32Array(nx*nz),crown=new Float32Array(nx*nz),spatial=new Map();
  for(const road of [3,...roads.slice(7).map((_,i)=>i+7)]){const points=route.filter(p=>p.road===road);for(let i=0;i<points.length-1;i+=4){const a=points[i],b=points[Math.min(i+4,points.length-1)],da=a.y-base(a.x,a.z),db=b.y-base(b.x,b.z),radius=clamp(250+Math.max(Math.abs(da),Math.abs(db))*2.6,400,1800),segment={a,b,da,db,radius,crown:road===3,dx:b.x-a.x,dz:b.z-a.z};segment.inv=1/(segment.dx**2+segment.dz**2);
   for(let x=Math.floor((Math.min(a.x,b.x)-radius)/512);x<=Math.floor((Math.max(a.x,b.x)+radius)/512);x++)for(let z=Math.floor((Math.min(a.z,b.z)-radius)/512);z<=Math.floor((Math.max(a.z,b.z)+radius)/512);z++){const key=x+','+z;if(!spatial.has(key))spatial.set(key,[]);spatial.get(key).push(segment);}
  }}
@@ -151,7 +156,7 @@ const landformGrid=(()=>{const step=64,minX=Math.floor((BOUNDS.minX-1900)/step)*
  }return{step,minX,maxX,minZ,maxZ,nx,nz,extension,crown};})();
 function landformCorrection(x,z){const g=landformGrid;if(x<g.minX||x>=g.maxX||z<g.minZ||z>=g.maxZ)return 0;const xx=(x-g.minX)/g.step,zz=(z-g.minZ)/g.step,a=Math.floor(xx),b=Math.floor(zz),u=xx-a,v=zz-b,index=a*g.nz+b,sample=data=>mix(mix(data[index],data[index+g.nz],u),mix(data[index+1],data[index+g.nz+1],u),v);return sample(g.extension)*expansionWeight(x,z)+sample(g.crown);}
 function rockProfileTarget(x,z){const road=nearest(x,z);let y=terrainHeight(x,z);if(road.distance>6&&road.distance<24){const t=6/road.distance,sx=mix(road.x,x,t),sz=mix(road.z,z,t),shoulder=terrainHeight(sx,sz),rise=(road.distance-6)*.22,capped=clamp(y,shoulder-rise,shoulder+rise);y=mix(capped,y,smooth((road.distance-12)/12));}return y;}
-const rockProfiles=rockTrails.map(trail=>{const points=[];let along=0;
+const rockProfiles=baked?baked.rockProfiles:rockTrails.map(trail=>{const points=[];let along=0;
  for(let i=1;i<trail.points.length;i++){const a=trail.points[i-1],b=trail.points[i],length=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.ceil(length/2);for(let j=0;j<n;j++){const t=j/n,x=mix(a[0],b[0],t),z=mix(a[1],b[1],t);points.push({along:along+t*length,y:rockProfileTarget(x,z),locked:nearest(x,z).distance<=6});}along+=length;}
  const last=trail.points.at(-1);points.push({along,y:rockProfileTarget(...last),locked:nearest(...last).distance<=6});
  for(let pass=0;pass<3;pass++){const ys=points.map(p=>p.y);for(let i=1;i<points.length-1;i++)if(!points[i].locked)points[i].y=(ys[i-1]+ys[i]*2+ys[i+1])/4;}

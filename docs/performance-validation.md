@@ -58,6 +58,14 @@ Final targeted checks passed: geometry/visibility/adaptation/telemetry/cache/com
 
 ## Reproduce
 
+### Hosted startup
+
+The first publication attempt (saved version 20) was rejected by the host's script-startup CPU limit; version 19 stayed live. Investigation traced the expense to deterministic road grading and landform-grid construction at module initialization. The build now evaluates that data once and embeds the original values in the Worker, without adding a client download or changing physics/world sampling. Exact comparisons cover all road/profile records, both complete Float32 grids, 1,600 terrain/surface samples, road offsets and three spawns. An isolated comparison measured world setup at 5,048 ms CPU before versus 103 ms after; the complete built Worker imported in 584 ms CPU on the local container. These are local CPU measurements, not host timing guarantees. The rebuilt Worker/D1 preview passed concurrency, token isolation/privacy, all gears/reverse, chat, tow consent/detach and reconnect. The package helper now guards complete-entrypoint startup before upload.
+
+Run `node hosting/test-world-bake.cjs` for exact world equivalence and `node hosting/test-worker-startup.cjs` after building for the full-entrypoint check.
+
+### Client benchmarks
+
 Start `node over-the-hill/server.cjs`, then run:
 
 ```sh
