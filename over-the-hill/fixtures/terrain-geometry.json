@@ -1,0 +1,126 @@
+[
+  {
+    "chunk": [
+      0,
+      0,
+      4
+    ],
+    "groups": [
+      {
+        "ground": true,
+        "hash": {
+          "position": "238e8fdadb5b992d0b27256faec2b5d209412319f1a43aaf3e985c15792e9d6e",
+          "normal": "1a7a7204ec7492866868940084551003681074bc32f6df101c8b7edbd489e85f",
+          "color": "32b27141321eef0c668788e5bbb3c19b72ad5ecb0b7f961d35fcba0804416c0b",
+          "uv": "4ea4141fd63d7db75aef4374322008bfc78d6467976cf0fff6c4dbcabcddc1b5",
+          "waterDepth": "2396288ed09653afe16639ceeb834fdb0200deff40ebff5ed672b1b5e9d4ba02"
+        },
+        "bytes": 1253376
+      },
+      {
+        "ground": false,
+        "hash": {
+          "position": "fe8232bf825588219371552f82d2c69b7352b0b01f8ccc7dd342412b7e72293f",
+          "normal": "87ada8eb31b34c019e049fcc620e51a8fce023d9c9ff9b27eec19ccce5ee90c8",
+          "color": "eba7b18a30b6fef358cc71e4a24b8d3254276ad6c7338684480aa1f3e50c6335",
+          "uv": "c350a8c7003736cecac487bb303944da83cfe120b6b5e4bee335ee74d20f7640",
+          "waterDepth": "16b306d283ab446691480e2f78412b56abc0cbc3d8546b17e36efc298def6324"
+        },
+        "bytes": 70416
+      },
+      {
+        "ground": false,
+        "hash": {
+          "position": "8f479eb43c7dc85f016b4a817a23fac0bf7f286184f2d4fd32a07a72e73251da",
+          "normal": "9be5a516be47939fd03fefed3361295aea9c9424780e4a175259342ea62edc60",
+          "color": "b0e9df34819e139897a0b2defb39c17a4837057d586d2b5b6093c45cc766571b",
+          "uv": "1b8e8e8fb7eac5391f73ed45aca8242c71fb79e3e7ef64c5f814ccec829b94f9",
+          "waterDepth": "a71e2aed7bd649728a2ce920df5090dd7e52fa2e746c44913df468b6e4a45c22"
+        },
+        "bytes": 16128
+      }
+    ]
+  },
+  {
+    "chunk": [
+      -10,
+      3,
+      4
+    ],
+    "groups": [
+      {
+        "ground": true,
+        "hash": {
+          "position": "9e5c363f677bcc3ec2832fcc1dd0da266a155660130965b61477f44b5b1375a9",
+          "normal": "70bd2522f9fe98ac22f3c13655ac9d6362e8e257710ede3b91794eb3cb4c6f51",
+          "color": "d74c1bdc0fc6bc8d5eeaa41909e8fd2256f97885541348f452608e0fcd6e1f9d",
+          "uv": "f95fe0607b7e60d5d0ff090e2aa6c5fd37182a248168c02572ef75dafcb040f3",
+          "waterDepth": "2396288ed09653afe16639ceeb834fdb0200deff40ebff5ed672b1b5e9d4ba02"
+        },
+        "bytes": 1253376
+      },
+      {
+        "ground": false,
+        "hash": {
+          "position": "15a7e3b9bb21d9271dfe36b76d6b99cda98521f9186ba8c310534b25579ff747",
+          "normal": "66487ca0ac7fcd8ebe6b3b4746d842589cdfe5b6db7f7ed43e398168bdb79e69",
+          "color": "6b6195ac9fdb31aeed5203f426a3c716b4a20a2c64fe37daa3c7536278daf6b1",
+          "uv": "0c38d1819d4f7980b9e2c7d4b7fa9e28ba50bff653e4ba12c49cd49af0f40c9d",
+          "waterDepth": "ac27d8b38e369d9a0a1efaac0424d315186c9d079773a456467e4e6419c30224"
+        },
+        "bytes": 294912
+      }
+    ]
+  },
+  {
+    "chunk": [
+      0,
+      0,
+      32
+    ],
+    "groups": [
+      {
+        "ground": true,
+        "hash": {
+          "position": "0062ee176bc52b79a8b381e072b8a969ac5652b3cfb50cce6c650c30d685f4d7",
+          "normal": "fea9895d09f38cefc6d9f835e9e80ff7fa43c7b9a91029f9ff9ef1bd666390ad",
+          "color": "e0fdb0743c483a87249fee6ab7e1340776d43b9f51254493e2682d77358085cb",
+          "uv": "4781f0783effb73dc1176af575768b87a835fc730105eb083685b13147662885",
+          "waterDepth": "dd1601bfce78c7107b9d2ea46a581cf75b281f1c073a79f5dc67931cf0566532"
+        },
+        "bytes": 92160
+      }
+    ]
+  },
+  {
+    "chunk": [
+      0,
+      0,
+      128
+    ],
+    "groups": [
+      {
+        "ground": true,
+        "hash": {
+          "position": "698014f1f7254690db492364c895d6b307b9b2ec1df8a3d55e555c307b8cb840",
+          "normal": "c1b8d0e0a6dc9fe3a5070c3dbf2e5f8725bf738008efc613695ea2787fed87c6",
+          "color": "0071dc440e0df979a97fbaea51a313a61af4a5821c0f718857a8ab0378ca69dc",
+          "uv": "f934d337e37900e50796900ad0e19c9e37a17c5d68739dea6353a1455e9ea3f9",
+          "waterDepth": "dd1601bfce78c7107b9d2ea46a581cf75b281f1c073a79f5dc67931cf0566532"
+        },
+        "bytes": 92160
+      },
+      {
+        "ground": false,
+        "hash": {
+          "position": "81fe3c285f5255bcb5a3a88ef4160b93efa8d744031d731e348828a7fb82abb0",
+          "normal": "60786785ae6d47347e0a190f672efb73b5351c55fdc14dbd8dbf4ece721f4fec",
+          "color": "56626caa531fbb7f62e8fbd83e29e0b71a8d174de173a9b2b925d5da2a3a5757",
+          "uv": "1a80625e0cbed31724a7c5796167863265e4a4efa2b223f4ec37bf46c2ba709c",
+          "waterDepth": "bbbb405639d1a39e93d581c889cf11adc29627926808b6a04c012aa0aa01b291"
+        },
+        "bytes": 13104
+      }
+    ]
+  }
+]

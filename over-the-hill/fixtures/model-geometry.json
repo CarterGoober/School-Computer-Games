@@ -1,0 +1,343 @@
+{
+  "oak": {
+    "attrs": {
+      "position": "b283bed38b3b5d3341035c8b1ac6a124ca6213011dafae014788ebfd55b95354",
+      "normal": "53f2ad46a892b689d8a0282a3011df7f6781923655e3a76c185fba24473efcec",
+      "color": "65c78503503ab8ab810fe809e014cd8c9790495bca4a9e47e8a3daa08259b687",
+      "windWeight": "a6483b9a41976feef68f8065a39946eb305987ee5deed73037d30e18ca73f30e"
+    },
+    "vertices": 13500,
+    "indices": 0,
+    "triangles": 4500
+  },
+  "oak_low": {
+    "attrs": {
+      "position": "c9e68310fda6ac9513093c78e748ca8eb3f7520117afddc08969ecc3767b9669",
+      "normal": "0712065ead8d1aaf15d0aefb211cab790e1b7f23b3cfc6843e525cb875c090ab",
+      "color": "8380027ee0ca82315ab07bb78236072c8f133df0939803c7a77a7d9a36e676e5",
+      "windWeight": "99136a4318e6e54e2c8c584f6dbecfc118b40bcad92d6961bef2465b34965e75"
+    },
+    "vertices": 2478,
+    "indices": 0,
+    "triangles": 826
+  },
+  "birch": {
+    "attrs": {
+      "position": "516ddcb234472a87ca3a558d9b71d28d6cbdaa0396072d5dea23869696b9eb5b",
+      "normal": "0d1f5341d09ce3d7f2a9b7670d40f6427ab3f6b97df2a0fb3a2bdee5494f17ad",
+      "color": "8478c9199a494786ffa2c611792794e4db116ce4467f5d677920fc37631c5192",
+      "windWeight": "a6483b9a41976feef68f8065a39946eb305987ee5deed73037d30e18ca73f30e"
+    },
+    "vertices": 13500,
+    "indices": 0,
+    "triangles": 4500
+  },
+  "birch_low": {
+    "attrs": {
+      "position": "4a1b4368e7eb975c14d4e7bb3e6a2d101f5afb83f0c5b076300eb22cde1e9987",
+      "normal": "aa51028c4eab58e45d028e519bf74293e7864b101fd906bec56e08e5ebec55b8",
+      "color": "1e317a6c8bf799040b4f48e89662e4f5e665d6b51c030313e6c27075219b1f06",
+      "windWeight": "99136a4318e6e54e2c8c584f6dbecfc118b40bcad92d6961bef2465b34965e75"
+    },
+    "vertices": 2478,
+    "indices": 0,
+    "triangles": 826
+  },
+  "pine": {
+    "attrs": {
+      "position": "b16da7a970a5072bb5129717a515fa92240cee57e8d55a0ee52c38f962af2919",
+      "normal": "6e0751b67d933b3bc54b076ec26862b11914671d4f38c78dff8a48f94dd89f64",
+      "color": "44bf68e07a822c175589a8d98412d06b0bde4aacf3fcc957f3968d33611e7d1f",
+      "windWeight": "17e069b38a4636a80a404604ead4efc208aa759f423f2aae5c1fa068f4aa1f24"
+    },
+    "vertices": 5448,
+    "indices": 0,
+    "triangles": 1816
+  },
+  "pine_low": {
+    "attrs": {
+      "position": "cef680a481651dad4a6430a96debac1d291b7667d709a889d2455949002ca151",
+      "normal": "5850e4283af2f38869a74b0052d0c55daf1462feb498ff1832bd465d3586e380",
+      "color": "4c53bcbce454ea97722916d656e56d4d2daee3e521ce60c2fb213030370f6ce7",
+      "windWeight": "9badde0a380764e4e20466437df99df053c06397deb98d588685af9575b561f4"
+    },
+    "vertices": 894,
+    "indices": 0,
+    "triangles": 298
+  },
+  "grass": {
+    "attrs": {
+      "position": "fbc2fe439b8ad36559fe673e2525b34e14114d3a8d40af560871d1609546f20f",
+      "normal": "bc609888d5e11a82118cc7318c311736047acbf16d0149f4880bcc9f57b76521",
+      "color": "093875f2b16fca9f2e42ed8efaa3a66880c78c460f69c392bfd42563f6efc4b4",
+      "windWeight": "fdff2d14083047dd884cb3577e5976d9fb61660c64e070cc908cf79904da2a01"
+    },
+    "vertices": 198,
+    "indices": 0,
+    "triangles": 66
+  },
+  "fern": {
+    "attrs": {
+      "position": "d2a1d400575a0b381a0480d89d1d9d471e5d8f55dabcfa303f804f7c0d0c4b90",
+      "normal": "d7ad673c97d28439b73edfd6b1847c9700fd38b2a61ec9758784c9ceac7f7d76",
+      "color": "adbe42bf53a9ddaeca3d52503f8ae71a49008f383bfdc895e5e76ab57fe96015",
+      "windWeight": "0bcab23409198515660832fb22e56db71475917441f6ba540ab84287bd8bed48"
+    },
+    "vertices": 288,
+    "indices": 0,
+    "triangles": 96
+  },
+  "shrub": {
+    "attrs": {
+      "position": "62c4b0c45fa2befdc21826117cec63f2d1688db537e64d6420e787214b84fa21",
+      "normal": "2ef2a660ec86e0631732a3f314426a308565d4db3bc51cb6b381ae6055f7f262",
+      "color": "60468017ec77ac8d1d50de1dbb66fc10f3f20f4ad4f59b33bd3c95019bfb2cc7",
+      "windWeight": "cadaa46a7b837b74f828430ff537e9a7eca61f1872e5a2d63b986710b61f3203"
+    },
+    "vertices": 972,
+    "indices": 0,
+    "triangles": 324
+  },
+  "boulder": {
+    "attrs": {
+      "position": "5cda3fc25dafd65e8d0efea146565b8dd94b911c08d322ecc466dfbf9208afcc",
+      "normal": "8eb16d55ceae21f29bc7394b91dd512e2de33e08ad0b71090fe6e18aa649bde2",
+      "color": "284aa2d20e9baa26be727df9eca23f0a649733364a705c3a6dc9ad202819649f",
+      "windWeight": "3dc463a76fc170607c07b104c3cb531362ce7d6e10c1a34e0c0f370aeae08ce8"
+    },
+    "vertices": 240,
+    "indices": 0,
+    "triangles": 80
+  },
+  "cliff": {
+    "attrs": {
+      "position": "b3d18cb441db9f5224ebbcfe5d3305c0aa8b4e6a884ff05e750f392fff52e6ab",
+      "normal": "5c20497c1145de7c9ccbcfb5840bb22fbec3cbe71352e8f117b6ec80b59417bd",
+      "color": "d58a92de9ab595c6518b8e7f359442879a67d5d94ee73d73f90f9218fb5a99bf",
+      "windWeight": "523862a510945f2c2fd57aab7df19831a15603bd4a0d99c2515a79a90b3813f9"
+    },
+    "vertices": 1296,
+    "indices": 0,
+    "triangles": 432
+  },
+  "body": {
+    "attrs": {
+      "position": "e222623e4b1fa7d244c4096df97309629ad4bce57a08ebb1a3e4406cab68b7c1",
+      "normal": "353bc37c320b94439b100f25afd7edc18f328b5bb8484534cf3e0dda469ace99",
+      "color": "efcbdae7e872c04b9057fb3d3592c10c7ca8afcc2694400cdb86d6650c5eec62",
+      "windWeight": "b4bb1fb10f66011773f3d9fae1b6dded897dd812b966d97e9fc235e6f6f82598"
+    },
+    "vertices": 30348,
+    "indices": 0,
+    "triangles": 10116
+  },
+  "wheel_FL": {
+    "attrs": {
+      "position": "c088d864f80d633b0c5ca871c292a5d4488de4b3e170d9a0a23ffd2119fb2975",
+      "normal": "ea5b198a92332dbbdbba192af7399e84ed55720d1044fdadcb44c15362517a69",
+      "color": "040f53f250d8ec92ecb3558cdfa9c09abcc688f51dcdc9f843fa1389e8ad9de8",
+      "windWeight": "5069c0d29bd1531a9cda38a3145fe2f4c912dd9ca7a713a085f84b6563ab0f5a"
+    },
+    "vertices": 11676,
+    "indices": 0,
+    "triangles": 3892
+  },
+  "shock_FL": {
+    "attrs": {
+      "position": "c3d0332225100f94d50cbf88c0f1aac43b2ff2cef65b13c29559b9f0d5c56b4b",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "d26d2cfe5967f23e9c0e4667e7a9b09f2f2953ead5a077e3c10741acf6195033",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "spring_FL": {
+    "attrs": {
+      "position": "a09b01664d05ed3dad91384e4716de51b107b4d52b62d1894bb25e59e22c2600",
+      "normal": "eca10eba7e4b0ec4b04be95768431dc4a2ef933c576d9a78cb8ce85e60c858ea",
+      "color": "5d276aa23f19f188a645b9861dd57180c3532743058ce078a1e2e6e5de77d294",
+      "windWeight": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+    },
+    "vertices": 3072,
+    "indices": 0,
+    "triangles": 1024
+  },
+  "arm_FL": {
+    "attrs": {
+      "position": "1e86a1a5ecc2f19cc70adc08fd213cbf8b123bd20b4503d1ff57c1eb65415a15",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "fbc8cc5f45377ee1f39eb0b8e36730f5572ec6b9316ba635a6bec6eadd5c8748",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "wheel_FR": {
+    "attrs": {
+      "position": "c088d864f80d633b0c5ca871c292a5d4488de4b3e170d9a0a23ffd2119fb2975",
+      "normal": "ea5b198a92332dbbdbba192af7399e84ed55720d1044fdadcb44c15362517a69",
+      "color": "040f53f250d8ec92ecb3558cdfa9c09abcc688f51dcdc9f843fa1389e8ad9de8",
+      "windWeight": "5069c0d29bd1531a9cda38a3145fe2f4c912dd9ca7a713a085f84b6563ab0f5a"
+    },
+    "vertices": 11676,
+    "indices": 0,
+    "triangles": 3892
+  },
+  "shock_FR": {
+    "attrs": {
+      "position": "c3d0332225100f94d50cbf88c0f1aac43b2ff2cef65b13c29559b9f0d5c56b4b",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "d26d2cfe5967f23e9c0e4667e7a9b09f2f2953ead5a077e3c10741acf6195033",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "spring_FR": {
+    "attrs": {
+      "position": "a09b01664d05ed3dad91384e4716de51b107b4d52b62d1894bb25e59e22c2600",
+      "normal": "eca10eba7e4b0ec4b04be95768431dc4a2ef933c576d9a78cb8ce85e60c858ea",
+      "color": "5d276aa23f19f188a645b9861dd57180c3532743058ce078a1e2e6e5de77d294",
+      "windWeight": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+    },
+    "vertices": 3072,
+    "indices": 0,
+    "triangles": 1024
+  },
+  "arm_FR": {
+    "attrs": {
+      "position": "1e86a1a5ecc2f19cc70adc08fd213cbf8b123bd20b4503d1ff57c1eb65415a15",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "fbc8cc5f45377ee1f39eb0b8e36730f5572ec6b9316ba635a6bec6eadd5c8748",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "wheel_RL": {
+    "attrs": {
+      "position": "c088d864f80d633b0c5ca871c292a5d4488de4b3e170d9a0a23ffd2119fb2975",
+      "normal": "ea5b198a92332dbbdbba192af7399e84ed55720d1044fdadcb44c15362517a69",
+      "color": "040f53f250d8ec92ecb3558cdfa9c09abcc688f51dcdc9f843fa1389e8ad9de8",
+      "windWeight": "5069c0d29bd1531a9cda38a3145fe2f4c912dd9ca7a713a085f84b6563ab0f5a"
+    },
+    "vertices": 11676,
+    "indices": 0,
+    "triangles": 3892
+  },
+  "shock_RL": {
+    "attrs": {
+      "position": "c3d0332225100f94d50cbf88c0f1aac43b2ff2cef65b13c29559b9f0d5c56b4b",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "d26d2cfe5967f23e9c0e4667e7a9b09f2f2953ead5a077e3c10741acf6195033",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "spring_RL": {
+    "attrs": {
+      "position": "a09b01664d05ed3dad91384e4716de51b107b4d52b62d1894bb25e59e22c2600",
+      "normal": "eca10eba7e4b0ec4b04be95768431dc4a2ef933c576d9a78cb8ce85e60c858ea",
+      "color": "5d276aa23f19f188a645b9861dd57180c3532743058ce078a1e2e6e5de77d294",
+      "windWeight": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+    },
+    "vertices": 3072,
+    "indices": 0,
+    "triangles": 1024
+  },
+  "arm_RL": {
+    "attrs": {
+      "position": "1e86a1a5ecc2f19cc70adc08fd213cbf8b123bd20b4503d1ff57c1eb65415a15",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "fbc8cc5f45377ee1f39eb0b8e36730f5572ec6b9316ba635a6bec6eadd5c8748",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "wheel_RR": {
+    "attrs": {
+      "position": "c088d864f80d633b0c5ca871c292a5d4488de4b3e170d9a0a23ffd2119fb2975",
+      "normal": "ea5b198a92332dbbdbba192af7399e84ed55720d1044fdadcb44c15362517a69",
+      "color": "040f53f250d8ec92ecb3558cdfa9c09abcc688f51dcdc9f843fa1389e8ad9de8",
+      "windWeight": "5069c0d29bd1531a9cda38a3145fe2f4c912dd9ca7a713a085f84b6563ab0f5a"
+    },
+    "vertices": 11676,
+    "indices": 0,
+    "triangles": 3892
+  },
+  "shock_RR": {
+    "attrs": {
+      "position": "c3d0332225100f94d50cbf88c0f1aac43b2ff2cef65b13c29559b9f0d5c56b4b",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "d26d2cfe5967f23e9c0e4667e7a9b09f2f2953ead5a077e3c10741acf6195033",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "spring_RR": {
+    "attrs": {
+      "position": "a09b01664d05ed3dad91384e4716de51b107b4d52b62d1894bb25e59e22c2600",
+      "normal": "eca10eba7e4b0ec4b04be95768431dc4a2ef933c576d9a78cb8ce85e60c858ea",
+      "color": "5d276aa23f19f188a645b9861dd57180c3532743058ce078a1e2e6e5de77d294",
+      "windWeight": "f3cc103136423a57975750907ebc1d367e2985ac6338976d4d5a439f50323f4a"
+    },
+    "vertices": 3072,
+    "indices": 0,
+    "triangles": 1024
+  },
+  "arm_RR": {
+    "attrs": {
+      "position": "1e86a1a5ecc2f19cc70adc08fd213cbf8b123bd20b4503d1ff57c1eb65415a15",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "fbc8cc5f45377ee1f39eb0b8e36730f5572ec6b9316ba635a6bec6eadd5c8748",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  },
+  "axle_front": {
+    "attrs": {
+      "position": "7d470485cd8f72825393181500a76a93d90be947687901b682e84ae0c6f4c9cc",
+      "normal": "4e9c592570b86a7adef7fa240c345f7a1a4d222706036dc8a2944dd9e4cb24f3",
+      "color": "f7c34b745fda65dc0d764b31ec2e08ad297915c0a4c8fae58021b027dc5d3260",
+      "windWeight": "2c253d268f274610134a7a0131fbf74a507bb6726c1b2c37193efe293c352e2c"
+    },
+    "vertices": 312,
+    "indices": 0,
+    "triangles": 104
+  },
+  "axle_rear": {
+    "attrs": {
+      "position": "7d470485cd8f72825393181500a76a93d90be947687901b682e84ae0c6f4c9cc",
+      "normal": "4e9c592570b86a7adef7fa240c345f7a1a4d222706036dc8a2944dd9e4cb24f3",
+      "color": "f7c34b745fda65dc0d764b31ec2e08ad297915c0a4c8fae58021b027dc5d3260",
+      "windWeight": "2c253d268f274610134a7a0131fbf74a507bb6726c1b2c37193efe293c352e2c"
+    },
+    "vertices": 312,
+    "indices": 0,
+    "triangles": 104
+  },
+  "steering_link": {
+    "attrs": {
+      "position": "7afa2ddda875289fe162493960443970b58977f5d52b7b3de50c69063d973204",
+      "normal": "ec695204fa5fb60f3503f78410f2a536b776e7f20cd7bf586ecd3a314d47bc89",
+      "color": "d26d2cfe5967f23e9c0e4667e7a9b09f2f2953ead5a077e3c10741acf6195033",
+      "windWeight": "8889eb3cdd3d0ac94711b47ce78b430d8e23a7b31ecc994c56d0c3310c87674a"
+    },
+    "vertices": 132,
+    "indices": 0,
+    "triangles": 44
+  }
+}
