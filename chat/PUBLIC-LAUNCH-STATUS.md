@@ -1,5 +1,7 @@
 # Public launch preparation — limited testing only
 
+This records the v35 launch audit. For the subsequent notification/quick-DM update and newer test results, see [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
 The current deployment is based on the latest site (including the existing NEW Chat homepage feature), not a rollback to v31. `/chat/` and community rules/privacy are public. Public signup no longer requires a code. Protected conversations remain authenticated and owner-admitted. New signups cannot access messages until the owner independently reviews their actual account ID. The homepage badge remains NEW / Limited Testing; NOW LIVE is not enabled.
 
 ## Confirmed in the real database

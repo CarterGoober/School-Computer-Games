@@ -73,3 +73,7 @@ See [PUBLIC-LAUNCH-STATUS.md](PUBLIC-LAUNCH-STATUS.md) for the latest audit, two
 ## Public signup with reviewed messaging access
 
 The latest incremental update is `public-registration.sql`, applied after the invitation update. Signup requires no code; messaging remains owner-admitted while the public launch checks are incomplete. See [current launch status](PUBLIC-LAUNCH-STATUS.md) for exact behavior, tests and owner steps. Do not rerun the bootstrap schema.
+
+## Notifications & quick DMs
+
+See [notifications implementation and actual test results](NOTIFICATIONS.md). This is an additive update after public signup; existing data and admission restrictions are preserved.
