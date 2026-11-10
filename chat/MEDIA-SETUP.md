@@ -13,7 +13,7 @@ No WebRTC/audio/video implementation is claimed. Capacity is currently a bounded
 
 ## Required LiveKit configuration
 
-The operator supplied `wss://after-class-chat-nud0wr9r.livekit.cloud`. It is saved as `LIVEKIT_URL` in Sites production runtime configuration. Inspection confirmed that `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` are still absent. No cloud project or paid service was created by this agent. Saving a URL does not verify connectivity or enable media.
+The operator supplied `wss://after-class-chat-nud0wr9r.livekit.cloud`. It is saved as `LIVEKIT_URL` in Sites production runtime configuration. The operator subsequently added all three values in Supabase Edge Function Secrets. A deployed, values-free check returned `configured:true` and `mediaEnabled:false` (HTTP 200). Secret values were never returned. The credentials have not yet been proven valid against LiveKit itself. No cloud project or paid service was created by this agent. Saving a URL does not verify connectivity or enable media.
 
 1. Create or select a LiveKit Cloud project controlled by the platform operator. Choose the hosting region and review its current plan, usage limits and billing budget before adding a payment method. No project/plan purchase is authorized or performed automatically.
 2. Public project URL received and configured: `wss://after-class-chat-nud0wr9r.livekit.cloud`. It is not an API secret. Project ownership and media connectivity have not yet been tested.
@@ -25,3 +25,13 @@ The operator supplied `wss://after-class-chat-nud0wr9r.livekit.cloud`. It is sav
 Official LiveKit permission documentation was consulted in the preceding investigation. Provider fees have not been quoted for this account. Participant minutes, subscribed media bandwidth and plan limits determine cost; see the usage illustration in SOCIAL-ROADMAP.md. Credentials do not imply an approved budget or permission to activate live commerce.
 
 Payments, gifting and the later profile/cosmetic phases are unchanged and unimplemented. Existing Garage games, earned credits and published v37 remain unchanged by this authorization preparation.
+
+## Supabase configuration verification
+
+`livekit-status` is deployed to the existing Supabase project. GET returns only `configured` and `mediaEnabled` booleans; POST requires the exact app Origin and an active authenticated platform owner, verified through the existing trusted bootstrap RPC. Gateway JWT verification is disabled deliberately because GET is public and the POST handler performs its own active-session/owner authorization. It does not rely on client metadata.
+
+The owner can open **Chat → Settings → Owner dashboard → Settings → Check LiveKit connection**. The server creates a 60-second HMAC token granting only `roomList`, calls the fixed project's official ListRooms endpoint, discards returned room data and returns only success/failure. It never creates a room, issues participant media tokens, requests capture or exposes credentials. Successful/failed provider responses are cached for 60 seconds per warm function instance. This check is not proof of WebRTC connectivity or audio quality.
+
+Five additional Node tests passed for metadata-only status, owner/origin/auth enforcement, a cryptographically verified limited grant, response redaction and probe caching. A fixture-only desktop/mobile UI test covers the owner connection-check control. The real GET endpoint reported all configuration present; the real authenticated owner POST still needs to be run from the owner's browser. No secret-value reads or exports were used for verification.
+
+Live audio/video, admission leases, active-call revocation, client controls, media moderation and end-to-end two-client tests remain unfinished. Adding the diagnostic does not complete Phase 2 or enable it for students.
