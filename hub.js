@@ -10,3 +10,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('messa
 function updatePoints(){document.querySelectorAll('[data-points]').forEach(el=>{el.textContent=`${Progression.read('apex').balance.toLocaleString()} GARAGE POINTS / SHARED WALLET`;});}updatePoints();addEventListener('pageshow',updatePoints);addEventListener('storage',updatePoints);
 
 addEventListener('garage:updated',updatePoints);
+
+// Read the real shared-world population without creating a guest session.
+async function refreshCityPopulation(){const el=document.getElementById('city-online');if(!el||document.hidden)return;try{const r=await fetch('city-heist/api/population',{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('Unavailable');const d=await r.json();if(!Number.isInteger(d.online)||d.online<0)throw Error('Invalid population');el.textContent=d.online+' '+(d.online===1?'player':'players')+' online';}catch{el.textContent='Player count unavailable';}}
+refreshCityPopulation();setInterval(refreshCityPopulation,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshCityPopulation()});
