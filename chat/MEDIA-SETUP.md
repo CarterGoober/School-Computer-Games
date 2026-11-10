@@ -13,10 +13,10 @@ No WebRTC/audio/video implementation is claimed. Capacity is currently a bounded
 
 ## Required LiveKit configuration
 
-Production Sites environment inspection found **zero configured environment keys**. No new cloud project or paid service was created.
+The operator supplied `wss://after-class-chat-nud0wr9r.livekit.cloud`. It is saved as `LIVEKIT_URL` in Sites production runtime configuration. Inspection confirmed that `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` are still absent. No cloud project or paid service was created by this agent. Saving a URL does not verify connectivity or enable media.
 
 1. Create or select a LiveKit Cloud project controlled by the platform operator. Choose the hosting region and review its current plan, usage limits and billing budget before adding a payment method. No project/plan purchase is authorized or performed automatically.
-2. Copy the public project WebSocket URL (`wss://...`). This URL may be provided in chat; it is not the API secret.
+2. Public project URL received and configured: `wss://after-class-chat-nud0wr9r.livekit.cloud`. It is not an API secret. Project ownership and media connectivity have not yet been tested.
 3. Add the project's API credentials directly to the existing After Class Garage Site's **production runtime environment**, using these names: `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`. Mark credentials as secrets. Do not put them in ChatConfig, source files, the browser console, messages or a public repo. Never send the API secret here.
 4. Do not set a public media-enable flag yet. The token route, pinned official client/server SDK dependencies, allowed CSP provider hosts and signed webhook/participant-management endpoints still need implementation and testing. No client permission or token generation is active merely because credentials are present.
 5. Keep recording/egress off. Add recording/storage only if separately designed and explicitly authorized; this release requests neither.
