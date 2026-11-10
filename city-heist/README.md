@@ -36,3 +36,11 @@ Not yet verified: 24 simultaneous browser clients, long-duration public-network 
 Responsiveness, revised controls, measurements and detailed verification: [overhaul report](../docs/city-heist-overhaul-validation.md). Sound is opt-in using the header control.
 
 Private-base architecture, inventory transaction rules, latency comparison and current test results: [Harbor Home validation](../docs/city-heist-base-validation.md).
+
+## Bank / backpack update
+
+Extraction now leaves items in your carried backpack at home. TAB inspects it; enter the house to store/retrieve, or carry items to the Smuggler. Buy larger packs there (30/45/60 capacity; starter20). Purchased packs and carried items are at risk on elimination. Enter/exit the base car with E and drive east through the marked road exit to join the shared city; the Depart button has been removed. Bottom buildings now open north toward the lane. Garage previews use the in-game car renderer.
+
+The downtown Legendary Bank requires one carried Legendary Bank Key to unlock for that player's current run. Each completed ordinary robbery bundle has a0.5% chance to become a key. Bank bundles are excluded. Unlocking consumes one key only after server validation; keys can be extracted/stored/lost. Police receive bank alerts. Stay inside an extraction circle for8 continuous seconds to leave; stepping out cancels. Officers must use E inside their station to go off duty first.
+
+Current behavior supersedes older menu deployment/stash-on-extraction descriptions above. See [bank validation](../docs/city-heist-bank-validation.md) for tests, capacities and limitations. Run `node --test city-heist/test-bank.cjs city-heist/test-api.cjs city-heist/test-core.cjs city-heist/test-base.cjs city-heist/test-overhaul.cjs`, `node city-heist/test-bank-browser.cjs`, and `node city-heist/test-extraction-browser.cjs`.

@@ -14,3 +14,5 @@ header .city-title{position:absolute;left:50%;transform:translateX(-50%);white-s
 #welcome h1{font-size:32px;letter-spacing:-1px;line-height:1.15;margin:0 0 12px;font-weight:600}
 #welcome>p{font-size:12px;margin-bottom:26px}#welcome label{font-size:9px;letter-spacing:1.5px}#welcome .primary{padding:16px;margin:12px 0 18px}#welcome .warning{font-size:10px;color:#829caf}.entry-controls{margin-top:22px;border-top:1px solid #314b6244;padding-top:15px;color:#a1bbce;font-size:11px}.entry-controls summary{cursor:pointer}.entry-controls .controls{border:0;padding:0;line-height:1.9}#join-error:empty{display:none}@media(max-width:600px){.entry-screen header a span{display:none}.entry-screen #welcome{padding:25px}header .city-title{font-size:30px}}
 .entry-screen #city{filter:brightness(.46) saturate(.8) blur(2px)}
+
+.inventory-item.legendary{border-top:3px solid #e3b664;background:linear-gradient(135deg,#4c4025,#23323a)}.vehicle-card canvas{width:100%;height:100px;object-fit:contain}.shop-row{flex-wrap:wrap}.shop-row>button[data-backpack]{font-size:11px;flex:1;min-width:180px}
