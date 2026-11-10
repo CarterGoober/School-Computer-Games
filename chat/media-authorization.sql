@@ -1,4 +1,4 @@
--- Phase 2 authorization candidate only. NOT APPLIED to production.
+-- Phase 2 pilot authorization. Applied to production with media_release.enabled=false.
 -- This grants no media token and does not enable browser capture or SFU connections.
 begin;
 create table acc_private.voice_channels(room uuid primary key references public.acc_rooms on delete cascade,capacity smallint not null default 8 check(capacity between 2 and 24),camera boolean not null default false,screen boolean not null default false);

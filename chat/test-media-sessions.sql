@@ -1,0 +1,31 @@
+begin;
+do $$declare own uuid;student uuid;os uuid;ss uuid;s uuid;r uuid;one jsonb;two jsonb;begin
+ select owner_id into own from acc_private.owner_setup where id;select id into student from public.acc_profiles where id<>own and role='student' and not suspended limit 1;select id into os from auth.sessions where user_id=own limit 1;select id into ss from auth.sessions where user_id=student limit 1;
+ if own is null or student is null or os is null or ss is null then raise exception 'Two actual sessions required';end if;
+ update acc_private.media_release set last_sweep=null where id;
+ insert into acc_private.social_testers values(student) on conflict do nothing;
+ insert into public.acc_servers(owner,name) values(own,'Rollback call lifecycle') returning id into s;
+ insert into public.acc_rooms(kind,name,owner) values('group','Rollback voice',own) returning id into r;
+ insert into acc_private.server_channels(room,server,kind) values(r,s,'voice');insert into acc_private.server_members(server,person) values(s,own),(s,student);insert into acc_private.server_roles(server,name,everyone) values(s,'Everyone',true);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',own,'session_id',os,'role','authenticated')::text,true);
+ begin perform public.acc_media_session('join',r);raise exception 'Disabled pilot admitted';exception when others then if sqlerrm='Disabled pilot admitted' then raise;end if;end;
+ perform public.acc_media_session('enable',null,'{"enabled":true}');perform public.acc_media_session('config',r,'{"capacity":2,"camera":true,"screen":true}');
+ one:=public.acc_media_session('join',r);two:=public.acc_media_session('join',r);
+ if one->'lease'->>'id'<>two->'lease'->>'id' then raise exception 'Join retry duplicated reservation';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',student,'session_id',ss,'role','authenticated')::text,true);
+ perform public.acc_media_session('join',r);
+ if (select count(*) from acc_private.media_leases where room=r)<>2 then raise exception 'Two peers not reserved';end if;
+ begin perform public.acc_media_session('enable',null,'{"enabled":false}');raise exception 'Student enabled media';exception when others then if sqlerrm='Student enabled media' then raise;end if;end;
+ update acc_private.server_members set banned=true where server=s and person=student;
+ begin perform public.acc_media_session('heartbeat',r);raise exception 'Banned peer renewed';exception when others then if sqlerrm='Banned peer renewed' then raise;end if;end;
+ -- Service sweep uses stored, trusted user/session identities; no client can call this service wrapper.
+ two:=public.acc_media_service('sweep');
+ if not exists(select 1 from jsonb_array_elements(two)x where (x->>'remove')::boolean and x->>'id'=(select id::text from acc_private.media_leases where person=student)) then raise exception 'Ban did not queue SFU eviction';end if;
+ perform public.acc_media_service('ack',jsonb_build_object('lease',(select id from acc_private.media_leases where person=student),'removed',true));
+ if exists(select 1 from acc_private.media_leases where person=student) then raise exception 'Eviction ack did not release seat';end if;
+end $$;
+set local role authenticated;
+do $$begin if has_table_privilege(current_user,'acc_private.media_leases','SELECT') or has_function_privilege(current_user,'public.acc_media_service(text,jsonb)','EXECUTE') then raise exception 'Client has media service authority';end if;end $$;
+reset role;
+rollback;
+select 'PASS rollback-only two real session contexts: disabled pilot, owner-only enable/config, idempotent reservation, two peers, banned heartbeat denial, service eviction/ack and client grant isolation. Not a concurrency or WebRTC test.' result;

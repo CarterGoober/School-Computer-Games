@@ -29,7 +29,7 @@ Not ready for broad rollout. The user reports that independent two-browser priva
 | Phase | Status | Deployment readiness |
 | --- | --- | --- |
 | 1 Servers/discovery | Functional owner-only pilot; limits above | Pilot; user reports all requested two-browser checks passed |
-| 2 Voice/video/screens | Authorization candidate tested; no connected media implementation | Not ready |
+| 2 Voice/video/screens | Restricted voice/video pilot implemented; credential check user-reported passing | Opt-in pilot only; real two-client media testing pending |
 | 3 Persistent game voice/stream panel | Architecture only; no session-shell conversion | Not ready |
 | 4 Unified profiles/five starter avatars/catalog/ownership | Not implemented | Not ready |
 | 5 Gifting/payment preparation | Design notes below only; no checkout, gifts or fulfillment implemented | Not ready; live payments explicitly off |
@@ -61,3 +61,7 @@ Core chat, servers, media and games stay free. Prices are one-time cosmetic SKUs
 Phase 1 uses the existing Supabase/Sites projects; database/storage/realtime usage can grow, and no new plan or paid project was purchased. A reliable media quote requires participant minutes, concurrency, region and video/screen bitrate. For budgeting, 100 students × 60 minutes × 20 days is **120,000 participant-minutes/month**, not a provider price quote. Video bandwidth can dominate; audio-only defaults and adaptive subscriptions should be measured before choosing a plan. Self-hosting shifts costs to compute, bandwidth/TURN and operations rather than making media free.
 
 For micro-purchases, fixed transaction fees dominate. As an **illustrative assumption only**, a 2.9% + $0.30 fee leaves approximately $0.176 from $0.49, $0.661 from $0.99 and $1.632 from $1.99 before taxes, refunds or other charges. These are not verified provider rates for your account. Obtain actual country/account pricing and minimum-charge rules. Optional clearly priced cosmetic bundles may reduce fee overhead; do not introduce a cash wallet, forced minimum basket or spending pressure to conceal fees. No transaction has been run or claimed successful.
+
+## v39 voice pilot
+
+See [VOICE-PILOT.md](VOICE-PILOT.md) for current code, activation, tests and limitations. Historical preparation statements above are superseded by that report. Phases 3–5 remain unimplemented.

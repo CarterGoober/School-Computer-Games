@@ -1,0 +1,7 @@
+{
+  "package": "livekit-client",
+  "version": "2.23.0",
+  "integrity": "sha512-j9Kg86nJjBjNFUD+ukp2jwMCGa0k+YD5gU//RzAM+ZY3pbG631QCte7fQjwqWMmtBzhDJL9nKYuOLMv/9IbAxg==",
+  "servedAssetSha256": "b483eb57f4efb28d55b669d7548fd44a5cef1441a7b9a420b52303753274dec0",
+  "license": "Apache-2.0, included in the served JS header and source license file"
+}

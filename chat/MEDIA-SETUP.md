@@ -1,3 +1,7 @@
+# Historical authorization preparation (v38)
+
+For the implemented v39 pilot and current testing instructions, see [VOICE-PILOT.md](VOICE-PILOT.md). The sections below describe the earlier preparation stage.
+
 # Phase 2 — authorization prepared; media still disabled
 
 The user reports all requested Phase 1 tests passed in separate browsers: private invitation, text messages, denied channel and ban. This is user-reported acceptance, not an independently captured test trace. The remaining Phase 1 UI limitations remain documented in SOCIAL-ROADMAP.md.
