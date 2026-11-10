@@ -61,3 +61,7 @@ The latest requested mode allows only private, invitation-bound **unverified** t
 ## Grades and owner administration
 
 See [GRADES-ADMIN.md](GRADES-ADMIN.md). New signup requires grade9–12; trusted database grade controls channel RLS. Old accounts remain pending until owner approval. The actual existing owner candidate must redeem a private, UUID-bound setup code in Settings. Moderator invitations require intended-account acceptance plus a private code; email lookup alone never grants privileges. Public enrollment remains closed.
+
+## Owner-generated tester invitations
+
+The owner can now generate/copy/revoke single-use,24-hour, email-bound student signup codes under Settings → Owner dashboard → Invitations. See [TESTER-INVITATIONS.md](TESTER-INVITATIONS.md). These never grant staff privileges. Existing accounts are preserved; public enrollment stays closed.
