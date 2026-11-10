@@ -57,3 +57,7 @@ Remaining limitations: full school-email and WebSocket end-to-end launch tests a
 ## Current private password test mode
 
 The latest requested mode allows only private, invitation-bound **unverified** test accounts without SMTP. See [PRIVATE-PASSWORD-TESTING.md](PRIVATE-PASSWORD-TESTING.md). Public registration remains closed; email recovery/resend are disabled. Supabase's Confirm email switch must be OFF before signup; the frontend checks this and refuses to consume an invitation otherwise. Do not use the older email-verification launch instructions for this private mode.
+
+## Grades and owner administration
+
+See [GRADES-ADMIN.md](GRADES-ADMIN.md). New signup requires grade9–12; trusted database grade controls channel RLS. Old accounts remain pending until owner approval. The actual existing owner candidate must redeem a private, UUID-bound setup code in Settings. Moderator invitations require intended-account acceptance plus a private code; email lookup alone never grants privileges. Public enrollment remains closed.
