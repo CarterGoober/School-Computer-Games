@@ -65,3 +65,7 @@ See [GRADES-ADMIN.md](GRADES-ADMIN.md). New signup requires grade9–12; trusted
 ## Owner-generated tester invitations
 
 The owner can now generate/copy/revoke single-use,24-hour, email-bound student signup codes under Settings → Owner dashboard → Invitations. See [TESTER-INVITATIONS.md](TESTER-INVITATIONS.md). These never grant staff privileges. Existing accounts are preserved; public enrollment stays closed.
+
+## Public launch preparation status
+
+See [PUBLIC-LAUNCH-STATUS.md](PUBLIC-LAUNCH-STATUS.md) for the latest audit, two-existing-account rollback tests, public rules/privacy page and remaining blockers. The new leaked-password-protection warning supersedes earlier advisor summaries. NEW / Limited Testing stays on the homepage; unrestricted registration is not enabled.
