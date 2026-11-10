@@ -11,7 +11,7 @@ do $$declare own uuid;student uuid;os uuid;ss uuid;s uuid;voice uuid;textroom uu
  insert into acc_private.server_channels(room,server,kind) values(voice,s,'voice'),(textroom,s,'text');
  perform set_config('request.jwt.claims',jsonb_build_object('sub',student,'session_id',ss,'role','authenticated')::text,true);
  g:=public.acc_media_authorize(voice);
- if g->>'identity'<>student::text or g->>'room'<>'acc-'||voice::text or not(g->>'microphone')::boolean or (g->>'camera')::boolean or (g->>'screen')::boolean then raise exception 'Unsafe default media grant';end if;
+ if g->>'identity'<>student::text or g->>'room'<>'acc-'||voice::text or not(g->>'microphone')::boolean or not(g->>'camera')::boolean or not(g->>'screen')::boolean then raise exception 'Unsafe default media grant';end if;
  begin perform public.acc_media_authorize(textroom);raise exception 'Server text channel bypass';exception when others then if sqlerrm='Server text channel bypass' then raise;end if;end;
  update acc_private.server_members set muted_until=now()+interval '10 minutes' where server=s and person=student;
  if (public.acc_media_authorize(voice)->>'microphone')::boolean then raise exception 'Server mute bypass';end if;
@@ -20,11 +20,11 @@ do $$declare own uuid;student uuid;os uuid;ss uuid;s uuid;voice uuid;textroom uu
  update acc_private.server_members set banned=false where server=s and person=student;
  update acc_private.server_roles set permissions='{"view":true,"join_voice":false}' where server=s and everyone;
  begin perform public.acc_media_authorize(voice);raise exception 'Join voice denial bypass';exception when others then if sqlerrm='Join voice denial bypass' then raise;end if;end;
- delete from acc_private.social_testers where person=student;
- begin perform public.acc_media_authorize(voice);raise exception 'Pilot revocation bypass';exception when others then if sqlerrm='Pilot revocation bypass' then raise;end if;end;
+ update public.acc_profiles set suspended=true where id=student;
+ begin perform public.acc_media_authorize(voice);raise exception 'Suspension bypass';exception when others then if sqlerrm='Suspension bypass' then raise;end if;end;
 end $$;
 set local role anon;
 do $$begin if has_function_privilege(current_user,'public.acc_media_authorize(uuid)','EXECUTE') then raise exception 'Anonymous media permission granted';end if;end $$;
 reset role;
 rollback;
-select 'PASS authorization-candidate DB tests: actual student session identity, safe sources, text-channel bypass denial, role join denial, mute, ban, pilot revocation and anonymous denial. Rolled back; no production media enabled and no WebRTC test.' result;
+select 'PASS authorization-candidate DB tests: actual student session identity, safe sources, text-channel bypass denial, role join denial, mute, ban, suspension and anonymous denial. All test changes rolled back; no WebRTC test.' result;

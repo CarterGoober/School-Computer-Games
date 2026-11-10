@@ -1,3 +1,7 @@
+# Historical v39 pilot report
+
+The user subsequently reported that the real call and its controls worked. The new automatic-access, invitation and game-shell behavior is documented in [EASY-VOICE.md](EASY-VOICE.md). Old pilot/approval instructions below are superseded.
+
 # Phase 2 voice/video — restricted opt-in pilot
 
 The user reports the v38 authenticated connection check returned **LiveKit accepted the server credentials**. That verifies the owner's credential probe, not WebRTC connectivity. Phase 1's four requested browser tests were also reported passing by the user.

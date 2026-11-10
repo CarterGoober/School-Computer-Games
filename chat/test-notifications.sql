@@ -71,12 +71,12 @@ end $$;
 reset role;
 do $$declare own uuid:=current_setting('nt.own')::uuid;student uuid:=current_setting('nt.student')::uuid;begin
  perform set_config('request.jwt.claims',jsonb_build_object('sub',own,'session_id',current_setting('nt.os'),'role','authenticated')::text,true);
- perform public.acc_call('revokeRegistration',jsonb_build_object('target',student));
+ perform public.acc_call('suspend',jsonb_build_object('target',student,'enabled',true));
  perform set_config('request.jwt.claims',jsonb_build_object('sub',student,'session_id',current_setting('nt.ss'),'role','authenticated')::text,true);
- begin perform public.acc_call('inboxSnapshot');raise exception 'Pending account read inbox';exception when others then if sqlerrm='Pending account read inbox' then raise;end if;end;
+ begin perform public.acc_call('inboxSnapshot');raise exception 'Suspended account read inbox';exception when others then if sqlerrm='Suspended account read inbox' then raise;end if;end;
 end $$;
 set local role authenticated;
-do $$begin if exists(select 1 from public.acc_notifications) or exists(select 1 from public.acc_inbox_settings) or exists(select 1 from public.acc_inbox_rooms) then raise exception 'Pending account RLS leak';end if;end $$;
+do $$begin if exists(select 1 from public.acc_notifications) or exists(select 1 from public.acc_inbox_settings) or exists(select 1 from public.acc_inbox_rooms) then raise exception 'Suspended account RLS leak';end if;end $$;
 reset role;
 set local role anon;
 do $$begin if has_table_privilege(current_user,'public.acc_notifications','SELECT') then raise exception 'Anonymous notifications exposed';end if;end $$;

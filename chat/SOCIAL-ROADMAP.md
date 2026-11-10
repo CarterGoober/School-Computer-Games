@@ -65,3 +65,7 @@ For micro-purchases, fixed transaction fees dominate. As an **illustrative assum
 ## v39 voice pilot
 
 See [VOICE-PILOT.md](VOICE-PILOT.md) for current code, activation, tests and limitations. Historical preparation statements above are superseded by that report. Phases 3–5 remain unimplemented.
+
+## Automatic access and game voice update
+
+See [EASY-VOICE.md](EASY-VOICE.md) for the current policy. The user reported an actual working call and controls; registration and voice eligibility no longer require account or pilot approvals. The newer ringing/game-shell changes still need their own two-browser acceptance test. Earlier private-pilot setup instructions are historical.

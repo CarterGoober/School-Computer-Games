@@ -2,7 +2,7 @@ begin;
 do $$declare own uuid;student uuid;os uuid;ss uuid;s uuid;r uuid;one jsonb;two jsonb;begin
  select owner_id into own from acc_private.owner_setup where id;select id into student from public.acc_profiles where id<>own and role='student' and not suspended limit 1;select id into os from auth.sessions where user_id=own limit 1;select id into ss from auth.sessions where user_id=student limit 1;
  if own is null or student is null or os is null or ss is null then raise exception 'Two actual sessions required';end if;
- update acc_private.media_release set last_sweep=null where id;
+ update acc_private.media_release set last_sweep=null,enabled=false where id;
  insert into acc_private.social_testers values(student) on conflict do nothing;
  insert into public.acc_servers(owner,name) values(own,'Rollback call lifecycle') returning id into s;
  insert into public.acc_rooms(kind,name,owner) values('group','Rollback voice',own) returning id into r;

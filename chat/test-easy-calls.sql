@@ -1,0 +1,41 @@
+begin;
+do $$declare own uuid;peer uuid;os uuid;ps uuid;dm uuid;c uuid;fixture uuid:=gen_random_uuid();sid uuid:=gen_random_uuid();g jsonb;begin
+ select owner_id into own from acc_private.owner_setup where id;select id into peer from public.acc_profiles where lower(username)='casoe' and not suspended;select id into os from auth.sessions where user_id=own limit 1;select id into ps from auth.sessions where user_id=peer limit 1;
+ if own is null or peer is null or os is null or ps is null then raise exception 'Two existing account sessions required';end if;
+ -- Unverified rollback-only signup/session fixture, no password, email delivery or verification timestamp.
+ insert into auth.users(id,email,raw_user_meta_data) values(fixture,'rollback-'||fixture::text||'@leisdstudent.ws',jsonb_build_object('username','Easy'||substr(replace(fixture::text,'-',''),1,12),'grade',9,'role','admin'));
+ insert into auth.sessions(id,user_id) values(sid,fixture);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',fixture,'session_id',sid,'role','authenticated')::text,true);
+ if not acc_private.verified() or not acc_private.media_available(fixture) then raise exception 'New account needs manual approval';end if;
+ if acc_private.is_owner() or (select role from public.acc_profiles where id=fixture)<>'student' then raise exception 'Signup metadata escalated role';end if;
+ if acc_private.access((select room from acc_private.channel_settings where grade=12 limit 1)) then raise exception 'Wrong grade access';end if;
+ if exists(select 1 from acc_private.social_testers where person=fixture) or exists(select 1 from acc_private.pilot_allowlist where claimed_by=fixture) then raise exception 'Fixture unexpectedly has manual approval';end if;
+ g:=public.acc_call('bootstrap');if g->'self'->>'grade'<>'9' then raise exception 'Registered grade missing';end if;
+ begin perform public.acc_call('send',jsonb_build_object('room',(select id from public.acc_rooms where name='announcements' and kind='school' limit 1),'body','Forbidden new account post','nonce',gen_random_uuid()));raise exception 'Student announcement allowed';exception when others then if sqlerrm='Student announcement allowed' then raise;end if;end;
+ -- Restore controlled two-real-user call conditions only inside this transaction.
+ delete from acc_private.media_leases where person in(own,peer);delete from public.acc_preferences where(person=own and target=peer)or(person=peer and target=own);delete from public.acc_friends where(sender=own and recipient=peer)or(sender=peer and recipient=own);insert into public.acc_friends values(own,peer,'accepted');
+ delete from public.acc_inbox_settings where person in(own,peer);delete from public.acc_inbox_rooms where person in(own,peer);delete from acc_private.social_testers where person=peer;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',own,'session_id',os,'role','authenticated')::text,true);
+ dm:=(public.acc_call('dm',jsonb_build_object('target',peer))->>'room')::uuid;delete from public.acc_calls where room=dm;
+ c:=(public.acc_call_signal('start',dm)->>'id')::uuid;
+ if c is null or (public.acc_call_signal('start',dm)->>'id')::uuid<>c then raise exception 'Call retry duplicated';end if;
+ begin perform acc_private.media_authorize(dm);raise exception 'Call joined before acceptance';exception when others then if sqlerrm='Call joined before acceptance' then raise;end if;end;
+ begin perform public.acc_call_signal('accept',null,c);raise exception 'Caller accepted for recipient';exception when others then if sqlerrm='Caller accepted for recipient' then raise;end if;end;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',peer,'session_id',ps,'role','authenticated')::text,true);
+ if jsonb_array_length(public.acc_call_signal('list'))<1 then raise exception 'Recipient sees no incoming call';end if;
+ perform public.acc_call_signal('decline',null,c);
+ if (select status from public.acc_calls where id=c)<>'declined' then raise exception 'Decline did not persist';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',own,'session_id',os,'role','authenticated')::text,true);c:=(public.acc_call_signal('start',dm)->>'id')::uuid;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',peer,'session_id',ps,'role','authenticated')::text,true);perform public.acc_call_signal('accept',null,c);
+ g:=acc_private.media_authorize(dm);if not(g->>'camera')::boolean or not(g->>'screen')::boolean then raise exception 'Normal call requires manual camera permissions';end if;
+ perform public.acc_media_session('join',dm);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',fixture,'session_id',sid,'role','authenticated')::text,true);
+ if acc_private.call_visible(dm,own,peer) then raise exception 'Third party can view private call';end if;
+ begin perform public.acc_call_signal('accept',null,c);raise exception 'Third party accepted call';exception when others then if sqlerrm='Third party accepted call' then raise;end if;end;
+ update public.acc_profiles set suspended=true where id=fixture;if acc_private.verified() then raise exception 'Ban bypass under auto admission';end if;
+end $$;
+set local role anon;
+do $$begin if has_table_privilege(current_user,'public.acc_calls','SELECT') or has_function_privilege(current_user,'public.acc_call_signal(text,uuid,uuid)','EXECUTE') then raise exception 'Anonymous call access';end if;end $$;
+reset role;
+rollback;
+select 'PASS rollback-only automatic unverified signup/session fixture with no approval, student role/grade/announcement/ban restrictions; two existing account call signaling, retry, recipient-only acceptance, decline, acceptance-before-join, ordinary camera/share eligibility and third-party/anonymous privacy. No real browser signup or WebRTC claim.' result;

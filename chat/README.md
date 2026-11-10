@@ -81,3 +81,7 @@ See [notifications implementation and actual test results](NOTIFICATIONS.md). Th
 ## Student servers and subsequent social phases
 
 See [SOCIAL-ROADMAP.md](SOCIAL-ROADMAP.md) for the owner-controlled Phase 1 pilot, tests, unfinished work, provider setup and costs. Voice/video and commerce are not enabled.
+
+## Current automatic signup and voice
+
+[EASY-VOICE.md](EASY-VOICE.md) supersedes manual account approval and individual voice-pilot enrollment. New call signaling and the persistent in-app game view extend the existing LiveKit integration.

@@ -4,7 +4,8 @@ do $$declare own uuid;student uuid;os uuid;ss uuid;s uuid;r uuid;roleid uuid;v j
  if own is null or student is null or os is null or ss is null then raise exception 'Two real existing account sessions required';end if;
  perform set_config('sv.student',student::text,true);perform set_config('sv.ss',ss::text,true);
  perform set_config('request.jwt.claims',jsonb_build_object('sub',student,'session_id',ss,'role','authenticated')::text,true);
- begin perform public.acc_call('serverCreate','{"name":"Forbidden pilot server"}');raise exception 'Pilot gate bypass';exception when others then if sqlerrm='Pilot gate bypass' then raise;end if;end;
+ if not acc_private.server_pilot() then raise exception 'Normal student still needs server approval';end if;
+ delete from acc_private.audit where actor=student and action='serverCreate';
  update acc_private.social_release set enabled=true where id;
  s:=(public.acc_call('serverCreate','{"name":"Rollback server","visibility":"private"}')->>'server')::uuid;
  select room into r from acc_private.server_channels where server=s;perform set_config('sv.server',s::text,true);perform set_config('sv.room',r::text,true);
@@ -52,4 +53,4 @@ set local role authenticated;
 do $$begin if exists(select 1 from public.acc_messages where room=current_setting('sv.room')::uuid) then raise exception 'Private room RLS leak';end if;if has_function_privilege(current_user,'acc_private.manage_notifications(text,jsonb)','EXECUTE') then raise exception 'Old dispatch bypass available';end if;end $$;
 reset role;
 rollback;
-select 'PASS rollback-only two real account contexts: pilot gate, creation rate limit, approval, private invitations/single use, channel deny, post deny, legacy edit denial, platform-role isolation, bans, direct RLS. No browser authentication or live two-client claim.' result;
+select 'PASS rollback-only two real account contexts: automatic student eligibility, creation rate limit, approval, private invitations/single use, channel deny, post deny, legacy edit denial, platform-role isolation, bans, direct RLS. No browser authentication or live two-client claim.' result;
