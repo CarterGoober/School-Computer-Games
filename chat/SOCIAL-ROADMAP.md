@@ -14,7 +14,7 @@ The public rollout switch remains **false**. The platform owner sees **Chat side
 
 ### Phase 1 limits / readiness
 
-Not ready for broad rollout. Independent two-browser authentication, invitations, cross-client text delivery and permission-revocation tests remain required. Browser tests used fixtures; database tests used the two real existing user/session contexts, with all test mutations rolled back. Voice channel definitions are configuration only: no joinable media or capture APIs are deployed. Category order currently uses explicit order controls; channel drag ordering works, but category-header drag ordering remains unfinished. More work remains on ownership-transfer UI, role hierarchy UX, a larger dedicated directory layout, member pagination and concurrent-load profiling. Reports use the existing platform report flow with server context; dedicated server/voice/profile case-management entities remain unfinished. The pilot must not be described as all of Phase 1 complete.
+Not ready for broad rollout. The user reports that independent two-browser private invitation, text messaging, denied-channel and ban tests all passed. These are user-reported acceptance results, not independently captured browser traces. Browser tests used fixtures; database tests used the two real existing user/session contexts, with all test mutations rolled back. Voice channel definitions are configuration only: no joinable media or capture APIs are deployed. Category order currently uses explicit order controls; channel drag ordering works, but category-header drag ordering remains unfinished. More work remains on ownership-transfer UI, role hierarchy UX, a larger dedicated directory layout, member pagination and concurrent-load profiling. Reports use the existing platform report flow with server context; dedicated server/voice/profile case-management entities remain unfinished. The pilot must not be described as all of Phase 1 complete.
 
 ### Tests actually performed
 
@@ -28,19 +28,19 @@ Not ready for broad rollout. Independent two-browser authentication, invitations
 
 | Phase | Status | Deployment readiness |
 | --- | --- | --- |
-| 1 Servers/discovery | Functional owner-only pilot; limits above | Pilot only; real two-browser acceptance pending |
-| 2 Voice/video/screens | Provider investigation and architecture only; no media implementation | Not ready |
+| 1 Servers/discovery | Functional owner-only pilot; limits above | Pilot; user reports all requested two-browser checks passed |
+| 2 Voice/video/screens | Authorization candidate tested; no connected media implementation | Not ready |
 | 3 Persistent game voice/stream panel | Architecture only; no session-shell conversion | Not ready |
 | 4 Unified profiles/five starter avatars/catalog/ownership | Not implemented | Not ready |
 | 5 Gifting/payment preparation | Design notes below only; no checkout, gifts or fulfillment implemented | Not ready; live payments explicitly off |
 
-Your requested order requires testing each phase before advancing. The real-browser gate for Phase 1 is still pending; existing reports of earlier chat tests do not verify student servers. Voice/video has not been published to students, and no fake checkout, purchase success, ownership unlock, voice simulation or payment form has been added.
+Your requested order requires testing each phase before advancing. The user has now reported all four Phase 1 two-browser server checks passing. Work has advanced to the Phase 2 authorization boundary, while the remaining Phase 1 UI limitations above stay documented. Voice/video has not been published to students, and no fake checkout, purchase success, ownership unlock, voice simulation or payment form has been added.
 
 ## Services and configuration required
 
 ### Media recommendation: LiveKit Cloud SFU
 
-Official LiveKit documentation confirms server-issued room grants and per-source publication permissions, plus server-side participant permission updates. Audio/video must travel through the SFU, not database subscriptions. Supabase remains the source of eligibility, memberships, blocks and scoped permissions. Before implementation/deployment, provide a project URL and configure `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` only as server-side hosting secrets. Never put them in ChatConfig or chat. Configure the signed webhook endpoint and provider region/billing budget. No provider project or credentials were supplied/verified in this session.
+Official LiveKit documentation confirms server-issued room grants and per-source publication permissions, plus server-side participant permission updates. Audio/video must travel through the SFU, not database subscriptions. Supabase remains the source of eligibility, memberships, blocks and scoped permissions. Before implementation/deployment, provide a project URL and configure `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` only as server-side hosting secrets. Never put them in ChatConfig or chat. Configure the signed webhook endpoint and provider region/billing budget. The production Sites runtime environment was inspected and contains zero configured keys. No LiveKit project URL or credentials have been supplied/verified. See [MEDIA-SETUP.md](MEDIA-SETUP.md) for the Phase 2 authorization candidate and exact missing setup.
 
 The token endpoint must validate the actual Supabase user/session and trusted room permissions, issue short-lived grants scoped to an opaque room ID, and explicitly restrict permitted sources. It must never treat an empty publish-source list as deny-all. Enforce membership limits, private-call consent and bans server-side. Revocation requires removing/updating participants through the SFU; expiring JWTs alone are insufficient for active calls. Default camera/screen off, capture only from user gestures, visible stop/sharing controls, recording/egress disabled. Test audio, permission revocation, mute/deafen/PTT, VAD, source-specific publishing, network drops, device changes and game frame times with two real clients before release.
 
