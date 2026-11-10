@@ -77,3 +77,7 @@ The latest incremental update is `public-registration.sql`, applied after the in
 ## Notifications & quick DMs
 
 See [notifications implementation and actual test results](NOTIFICATIONS.md). This is an additive update after public signup; existing data and admission restrictions are preserved.
+
+## Student servers and subsequent social phases
+
+See [SOCIAL-ROADMAP.md](SOCIAL-ROADMAP.md) for the owner-controlled Phase 1 pilot, tests, unfinished work, provider setup and costs. Voice/video and commerce are not enabled.
