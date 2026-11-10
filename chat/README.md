@@ -69,3 +69,7 @@ The owner can now generate/copy/revoke single-use,24-hour, email-bound student s
 ## Public launch preparation status
 
 See [PUBLIC-LAUNCH-STATUS.md](PUBLIC-LAUNCH-STATUS.md) for the latest audit, two-existing-account rollback tests, public rules/privacy page and remaining blockers. The new leaked-password-protection warning supersedes earlier advisor summaries. NEW / Limited Testing stays on the homepage; unrestricted registration is not enabled.
+
+## Public signup with reviewed messaging access
+
+The latest incremental update is `public-registration.sql`, applied after the invitation update. Signup requires no code; messaging remains owner-admitted while the public launch checks are incomplete. See [current launch status](PUBLIC-LAUNCH-STATUS.md) for exact behavior, tests and owner steps. Do not rerun the bootstrap schema.
