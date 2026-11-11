@@ -1,0 +1,2 @@
+/* Parse math before Markdown can consume its backslashes or emphasis characters. */
+marked.use({extensions:[{name:'garageMath',level:'inline',start:s=>{const m=/\\\(|\\\[|\$\$/.exec(s);return m?.index},tokenizer:s=>{const m=/^(?:\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]|\$\$([\s\S]+?)\$\$)/.exec(s);if(m)return{type:'garageMath',raw:m[0],text:m[1]??m[2]??m[3],display:m[1]===undefined}},renderer:t=>katex.renderToString(t.text,{displayMode:t.display,throwOnError:false,trust:false,strict:'ignore'})}]});

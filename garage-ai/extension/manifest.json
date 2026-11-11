@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Garage AI",
+  "version": "0.1.0",
+  "description": "A free study companion. Screen previews are sent only with your confirmation.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://gvurobdhsvcvdywdsgne.supabase.co/*"
+  ],
+  "background": {
+    "service_worker": "worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Open Garage AI"
+  },
+  "options_page": "options.html",
+  "commands": {
+    "open-garage-ai": {
+      "suggested_key": {
+        "default": "Alt+Shift+G"
+      },
+      "description": "Open Garage AI"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "panel.html",
+        "ui.css",
+        "panel.js",
+        "vendor/*"
+      ],
+      "matches": [
+        "https://*/*",
+        "http://*/*"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp1qBVSIJ8rDOplxhI9J426ufx25OtGsUI1eijNwLY2VL2t9ASmJs3ZOA3nyXPYMs0xDzJE7GtXi/29WzcTQaAVy6yL0OSeXpGkprt0EDw6pB7uTk2pa/jM0QsxufI0h0hLKBkuMkzHNx54flUMv7S1c5cN7RmUZ64R56CflOD8TP0SpAbjgh1KOliaqvo7iPVLIGhFUINS/cDuTgQ5TxvTsaznldcgdA76sMsMkVmJGteDZi/HmfHe29T0RxIWq92wHPHQLApQ3p3cihTBZLiVMKQ7PaInychmQirRF7gndrIQUPos307h8YDg1JbDmOcQsmsqpznf/w0pwewqjzAwIDAQAB"
+}
