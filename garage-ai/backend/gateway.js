@@ -39,7 +39,7 @@ export async function handle(req, env, fetcher = fetch) {
   // Legacy Gemini flags cannot accidentally activate this new provider.
   const enabled = env('GARAGE_AI_ENABLED') === 'true' && env('GARAGE_AI_CLOUDFLARE_VERIFIED_MODEL') === MODEL;
   const testing = input.test && env('GARAGE_AI_ENABLED') === 'false' && env('GARAGE_AI_SELF_TEST_ENABLED') === 'true';
-  if (!input.usage && (!configured(env) || (input.test ? !testing : !enabled)))
+  if (!input.usage && !input.test && (!configured(env) || !enabled))
     return reply(503, { error: 'Garage AI is awaiting Cloudflare free-plan configuration and model verification. No screenshot was sent to Cloudflare.' });
 
   const rpc = (name, body) => fetcher(env('SUPABASE_URL') + '/rest/v1/rpc/' + name, {
@@ -54,6 +54,16 @@ export async function handle(req, env, fetcher = fetch) {
       const boot = await r.json();
       if (boot?.self?.owner !== true) return reply(403, { error: 'Owner only.' });
     } catch { return reply(503, { error: 'Owner validation unavailable.' }); }
+  }
+  if (input.test && (!configured(env) || !testing)) {
+    // Only the authenticated owner sees setting names; never reveal values.
+    const missing = [];
+    if (!/^[a-f0-9]{32}$/i.test(env('CLOUDFLARE_ACCOUNT_ID') || '')) missing.push('CLOUDFLARE_ACCOUNT_ID must be a valid 32-character account ID');
+    if (!env('CLOUDFLARE_API_TOKEN')?.trim()) missing.push('CLOUDFLARE_API_TOKEN is missing');
+    for (const key of ['GARAGE_AI_CLOUDFLARE_FREE_PLAN_CONFIRMED', 'GARAGE_AI_CLOUDFLARE_MODEL_TERMS_CONFIRMED', 'GARAGE_AI_SELF_TEST_ENABLED'])
+      if (env(key) !== 'true') missing.push(key + '=true');
+    if (env('GARAGE_AI_ENABLED') !== 'false') missing.push('GARAGE_AI_ENABLED=false');
+    return reply(503, { error: 'Owner test blocked. Check Supabase Edge Functions → Secrets: ' + missing.join('; ') + '. No request was sent to Cloudflare. Keep student access disabled.' });
   }
   const testCase = input.test;
   if (testCase) input = selfTestInput(testCase);
