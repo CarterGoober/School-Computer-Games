@@ -1,5 +1,5 @@
 (() => {
-  const client = supabase.createClient(ChatConfig.url, ChatConfig.key);
+  const client = createChatClient(ChatConfig.url, ChatConfig.key);
   const status = document.querySelector('#status'), result = document.querySelector('#result');
   const buttons = [...document.querySelectorAll('button')];
   let owner = false, busy = false;
