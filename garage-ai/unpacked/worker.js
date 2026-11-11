@@ -6,7 +6,7 @@ async function session(){let{session:s}=await chrome.storage.session.get('sessio
 const trusted=sender=>sender.id===chrome.runtime.id&&[chrome.runtime.getURL('panel.html'),chrome.runtime.getURL('options.html')].includes(sender.url?.split('?')[0]);
 chrome.runtime.onMessage.addListener((m,sender,reply)=>{if(!trusted(sender))return; (async()=>{
  if(m.op==='login'){if(sender.url!==chrome.runtime.getURL('options.html'))throw Error('Use extension settings to sign in');const email=String(m.email||'').trim().toLowerCase();if(!/^[^@\s]+@leisdstudent\.ws$/.test(email))throw Error('Use your exact school email domain');const s=await auth('token?grant_type=password',{email,password:m.password});await chrome.storage.session.set({session:s});return{ok:true}}
- if(m.op==='logout'){const{session:s}=await chrome.storage.session.get('session');if(s)await fetch(URL+'/auth/v1/logout',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+s.access_token}}).catch(()=>{});await chrome.storage.session.clear();await chrome.storage.local.remove('histories');return{ok:true}}
+ if(m.op==='logout'){const{session:s}=await chrome.storage.session.get('session');if(s)await fetch(URL+'/auth/v1/logout?scope=local',{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+s.access_token}}).catch(()=>{});await chrome.storage.session.clear();await chrome.storage.local.remove('histories');return{ok:true}}
  if(m.op==='settings'){await chrome.runtime.openOptionsPage();return{ok:true}}
  if(m.op==='identity'){const{session:s}=await chrome.storage.session.get('session');return{id:s?.user?.id||null}}
  if(m.op==='capture'){
