@@ -58,7 +58,10 @@ export async function runModel(input, system, env, fetcher, maxTokens = 4096) {
   let data;
   try { data = JSON.parse(new TextDecoder().decode(bytes)); }
   catch { return { status: 502, error: 'Cloudflare returned an invalid response.' }; }
-  const answer = data?.result?.response;
+  const rawAnswer = data?.result?.response;
+  // Workers AI can return a numeric scalar for number-only questions.
+  // Do not stringify objects, arrays, booleans, null or non-finite numbers.
+  const answer = typeof rawAnswer === 'number' && Number.isFinite(rawAnswer) ? String(rawAnswer) : rawAnswer;
   if (data?.success !== true || typeof answer !== 'string' || !answer.trim() || answer.length > 64000)
     return { status: 422, error: 'No answer was returned. This attempt counts toward your limit.', diagnostic: {
       httpStatus: response.status,
