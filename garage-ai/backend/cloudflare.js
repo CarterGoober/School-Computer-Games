@@ -60,7 +60,16 @@ export async function runModel(input, system, env, fetcher, maxTokens = 4096) {
   catch { return { status: 502, error: 'Cloudflare returned an invalid response.' }; }
   const answer = data?.result?.response;
   if (data?.success !== true || typeof answer !== 'string' || !answer.trim() || answer.length > 64000)
-    return { status: 422, error: 'No answer was returned. This attempt counts toward your limit.' };
+    return { status: 422, error: 'No answer was returned. This attempt counts toward your limit.', diagnostic: {
+      httpStatus: response.status,
+      codes: Array.isArray(data?.errors) ? data.errors.slice(0,8).map(e=>e?.code).filter(Number.isSafeInteger) : [],
+      hint: 'Response format: success=' + (data?.success === true) +
+        ', resultType=' + (data?.result === null ? 'null' : typeof data?.result) +
+        ', responseType=' + typeof answer + ', responseLength=' + (typeof answer === 'string' ? answer.length : 0) +
+        ', choices=' + Array.isArray(data?.result?.choices) +
+        ', directResponse=' + (typeof data?.response === 'string') +
+        ', finish=' + (['stop','length','content_filter','tool_calls'].includes(data?.result?.choices?.[0]?.finish_reason) ? data.result.choices[0].finish_reason : 'unspecified') + '.'
+    } };
   return { answer: answer.trim() };
 }
 
