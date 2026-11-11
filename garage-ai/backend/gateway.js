@@ -83,7 +83,7 @@ export async function handle(req, env, fetcher = fetch) {
   try {
     const started = Date.now();
     const result = await runModel(input, SYSTEM, env, fetcher, testCase ? 64 : 4096);
-    if (result.error) return reply(result.status, { error: result.error });
+    if (result.error) return reply(result.status, { error: result.error + (testCase && result.diagnostic ? ' Owner diagnostic: HTTP ' + result.diagnostic.httpStatus + '; codes ' + (result.diagnostic.codes.join(', ') || 'none') + '; ' + result.diagnostic.hint : '') });
     if (testCase) return reply(200, { test: testCase, model: MODEL, answer: result.answer,
       passed: testCase === 'text' ? /^4[.!]?$/.test(result.answer) : /^red[.!]?$/i.test(result.answer),
       elapsed_ms: Date.now() - started, studentAccessEnabled: false, ...quota });
