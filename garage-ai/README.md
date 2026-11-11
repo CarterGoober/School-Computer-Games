@@ -1,3 +1,7 @@
+> Current provider/setup: [CLOUDFLARE.md](CLOUDFLARE.md). This supersedes the Gemini deployment instructions below; do not enable Gemini. Current changes remain unpublished.
+
+> Web-first local update: see [WEB-FIRST.md](WEB-FIRST.md). Do not publish or enable provider requests without owner approval. The extension build below remains optional.
+
 # Garage AI — development build
 
 Free-to-student Chrome MV3 study assistant extending After Class Garage. No extension publication or payments are authorized or performed. Games, chat roles and Garage Credits are unchanged.
@@ -22,7 +26,7 @@ The `garage-ai` Edge Function and per-account quota migration have been deployed
 3. Add `GEMINI_API_KEY` using a key from an approved Google AI Studio/Google Cloud project. Enter it only in Supabase, never chat or extension files.
 4. Add `GEMINI_MODEL=gemini-2.5-flash`. Check model availability in your Google project; you may explicitly choose `gemini-2.5-flash-lite`. There is no automatic model retry that can double costs.
 5. Add `GARAGE_AI_ORIGINS=https://afterclass-garage-ashen-vale.adoredcarat1.chatgpt.site,chrome-extension://epagkmojncpjkaldkhamibbiebjjbkfn` with no trailing slashes.
-6. Keep `GARAGE_AI_ENABLED=false` until the API account, data-use policy and budget are approved. To perform a controlled real test, set it to `true`, sign in from the extension, send a permitted text question and then one non-sensitive diagram. Check real returned answers. Disable again if the tests fail.
+6. Keep `GARAGE_AI_ENABLED=false` until the API account, data-use policy and budget are approved. Only after the owner confirms an eligible non-billing free-tier project and approves testing, configure the candidate gateway’s `GARAGE_AI_FREE_TIER_CONFIRMED=true` and set `GARAGE_AI_ENABLED=true`, sign in from the extension, send a permitted text question and then one non-sensitive diagram. Check real returned answers. Disable again if the tests fail.
 7. Configure Google project spending alerts/budgets and API restrictions. Student usage is free, but Google and Supabase may charge the operator. Limits do not guarantee zero provider cost.
 
 Defaults: 60 questions/day, 10 screen questions/day, 5 requests/minute, keyed to authenticated account; daily reset midnight UTC. Server owner can change the single row in `acc_private.ai_limits` using a trusted SQL Editor. Never grant that table to clients. Provider failures consume an attempt to bound abuse/cost; the UI discloses this. There are no purchases or credit deductions.

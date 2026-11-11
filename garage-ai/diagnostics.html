@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Garage AI · Owner test</title><link rel="stylesheet" href="extension/ui.css"></head>
+<body><main class="settings"><a href="./">← Garage AI</a><h1>Cloudflare connection test</h1>
+<p>Owner only. Student AI access must remain disabled. Each button sends one fixed, non-sensitive example, with at most 64 output tokens and no retries. Tests count toward your existing study limits and Cloudflare’s shared free allowance.</p>
+<p>First confirm the Cloudflare Workers Free plan and model terms in the server setup instructions. Never enter provider keys here.</p>
+<p id="status" role="status">Checking your Garage session…</p>
+<button id="text" disabled>Test 2 + 2</button><button id="image" disabled>Test a generated red image</button>
+<pre id="result" style="white-space:pre-wrap"></pre>
+<p>Passing tests do not enable student access or change any configuration.</p></main>
+<script src="../chat/config.js"></script><script src="../chat/supabase.js"></script><script src="diagnostics.js"></script></body></html>
