@@ -1,0 +1,25 @@
+{
+  "name": "chroma-clash",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Chroma Clash: an original browser 3D arena shooter with an authoritative multiplayer server, built for the Afterclass Garage.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "esbuild chroma/src/main.js --bundle --format=esm --target=es2020 --outfile=chroma/dist/game.js",
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "pretest": "npm run build",
+    "test": "node --test test/",
+    "check": "node --check server/index.js && node --check server/hub.js && node --check server/match.js && node --check chroma/src/main.js"
+  },
+  "dependencies": {
+    "three": "^0.169.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.2"
+  }
+}
