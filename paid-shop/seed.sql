@@ -1,0 +1,14 @@
+begin;
+insert into garage_commerce.products(id,name,kind,price_cents) values('orbit-fox','Orbit Fox','avatar',99);
+insert into garage_commerce.products(id,name,kind,price_cents) values('moon-racer','Moon Racer','avatar',149);
+insert into garage_commerce.products(id,name,kind,price_cents) values('cyan-orbit','Cyan Orbit','frame',199);
+insert into garage_commerce.products(id,name,kind,price_cents) values('star-trail','Star Trail','effect',199);
+insert into garage_commerce.products(id,name,kind,price_cents) values('midnight-arcade','Midnight Arcade','theme',249);
+insert into garage_commerce.products(id,name,kind,price_cents) values('starter-kit','First Orbit Bundle','bundle',199);
+insert into garage_commerce.products(id,name,kind,price_cents) values('night-crew','Night Crew Bundle','bundle',399);
+insert into garage_commerce.bundle_items values('starter-kit','orbit-fox');
+insert into garage_commerce.bundle_items values('starter-kit','cyan-orbit');
+insert into garage_commerce.bundle_items values('night-crew','moon-racer');
+insert into garage_commerce.bundle_items values('night-crew','star-trail');
+insert into garage_commerce.bundle_items values('night-crew','midnight-arcade');
+commit;
