@@ -140,7 +140,8 @@ export class SceneView {
     this.muzzle.visible = false;
     this.weaponGroup.add(this.muzzle);
 
-    this.weaponGroup.position.set(0.26, -0.24, -0.46);
+    this.weaponGroup.scale.setScalar(0.62);
+    this.weaponGroup.position.set(0.3, -0.3, -0.62);
     this.camera.add(this.weaponGroup);
   }
 
@@ -312,7 +313,7 @@ export class SceneView {
       this.bobTime += dt * 9;
       const bobX = Math.sin(this.bobTime) * 0.008;
       const bobY = Math.abs(Math.cos(this.bobTime)) * 0.01;
-      this.weaponGroup.position.set(0.26 + bobX, -0.24 + bobY, -0.46);
+      this.weaponGroup.position.set(0.3 + bobX, -0.3 + bobY, -0.62);
     }
     if (this.muzzleTimer > 0) {
       this.muzzleTimer -= dt;

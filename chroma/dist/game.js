@@ -22433,7 +22433,8 @@ var SceneView = class {
     this.muzzle.position.set(0, 0.012, -0.6);
     this.muzzle.visible = false;
     this.weaponGroup.add(this.muzzle);
-    this.weaponGroup.position.set(0.26, -0.24, -0.46);
+    this.weaponGroup.scale.setScalar(0.62);
+    this.weaponGroup.position.set(0.3, -0.3, -0.62);
     this.camera.add(this.weaponGroup);
   }
   resize() {
@@ -22597,7 +22598,7 @@ var SceneView = class {
       this.bobTime += dt * 9;
       const bobX = Math.sin(this.bobTime) * 8e-3;
       const bobY = Math.abs(Math.cos(this.bobTime)) * 0.01;
-      this.weaponGroup.position.set(0.26 + bobX, -0.24 + bobY, -0.46);
+      this.weaponGroup.position.set(0.3 + bobX, -0.3 + bobY, -0.62);
     }
     if (this.muzzleTimer > 0) {
       this.muzzleTimer -= dt;
