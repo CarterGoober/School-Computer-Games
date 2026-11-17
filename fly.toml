@@ -1,0 +1,38 @@
+# Fly.io deployment for Chroma Clash (single machine + persistent volume).
+# Run `fly launch --no-deploy` and keep this file, or change `app` to a name you
+# own. See docs/DEPLOYMENT.md, section 5, for the full recipe.
+app = "chroma-clash"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "8787"
+  CHROMA_DATA_DIR = "/data"
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  # Matches live in memory and every player holds a WebSocket, so the machine
+  # must not scale to zero; sleeping would drop live matches.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[http_service.checks]]
+  interval = "15s"
+  timeout = "2s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/api/health"
+
+# Accounts, progression and the generated signing secret live here. Create it
+# once with: fly volumes create chroma_data --size 1 --region iad
+[[mounts]]
+  source = "chroma_data"
+  destination = "/data"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"

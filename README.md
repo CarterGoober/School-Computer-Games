@@ -190,7 +190,9 @@ What is covered:
 - **Progression:** guest upgrades, case-insensitive unique names, scrypt hashing, tamper-proof/expiring tokens, level/funds/ownership purchase checks, loadout validation, persistence across store reloads.
 - **Integration:** real HTTP APIs, CORS preflight and origin rejection, static allowlist (server source/data are not served), CSP header, guest sessions, registration/login, and a **two-client WebSocket match with a real disconnect and reconnect**.
 
-**Not verified in this environment:** the 3D rendering, pointer-lock feel and full browser gameplay, because no Chromium/WebGL browser was available in the build sandbox. The client bundle compiles and its imports resolve; the server and shared simulation are covered by the tests above. Run a browser smoke test after deployment (checklist in `docs/DEPLOYMENT.md`).
+**Browser smoke test (done):** the client was also run in Chromium with WebGL 2, not just compiled. Confirmed working: the arena renders with its floor, walls, cover and floating decor; a guest runner is created on first load; 1v1 and 2v2 queues start a bot-backfilled match; the HUD, timer and score update; bots deal damage; death and respawn work; pointer lock and mouse aim respond; and reloading mid-2v2 resumes the same match with "Reconnected. Back in the match."
+
+**Still unverified:** long-session feel and balance, audio output, and matches between two real humans (the smoke test used bot backfill). Run the manual checklist in `docs/DEPLOYMENT.md` after deployment.
 
 ---
 

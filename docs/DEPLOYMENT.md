@@ -92,14 +92,15 @@ See [`deploy/oracle-cloud.md`](../deploy/oracle-cloud.md). It uses a free VM, Do
 ### Fly.io (single machine + volume)
 
 ```sh
-fly launch --no-deploy        # accept the included Dockerfile
-fly volumes create chroma_data --size 1
+fly launch --no-deploy        # uses the included fly.toml and Dockerfile
+fly volumes create chroma_data --size 1 --region iad
 fly secrets set CHROMA_SECRET="$(openssl rand -hex 32)"
 fly secrets set CHROMA_ALLOWED_ORIGINS="https://your-site.example"
+fly secrets set CHROMA_FRAME_ANCESTORS="'self' https://your-site.example"
 fly deploy
 ```
 
-Ensure the volume is mounted at `/data` and `CHROMA_DATA_DIR=/data` is set (both are in `.env.example`; add them in `fly.toml` if not). Fly provides HTTPS and WebSocket upgrades.
+The included `fly.toml` already sets the internal port, `CHROMA_DATA_DIR=/data`, the `/data` volume mount, a `/api/health` check, and `auto_stop_machines = "off"` with `min_machines_running = 1` — machines must not sleep, because matches live in memory and every player holds a WebSocket. Change `app` to a name you own (or let `fly launch` pick one) and keep the volume's region and source name in sync with the mount. Fly provides HTTPS and WebSocket upgrades.
 
 ### Railway / Render
 
