@@ -1,0 +1,7 @@
+{$CHROMA_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy chroma:8787
+	header {
+		-Server
+	}
+}

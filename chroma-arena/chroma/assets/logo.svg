@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Chroma Clash splat mark">
+  <defs>
+    <linearGradient id="g" x1="8" y1="6" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffa63d"/>
+      <stop offset="0.55" stop-color="#ff7a59"/>
+      <stop offset="1" stop-color="#a45cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="#122733"/>
+  <path fill="url(#g)" d="M32 8l5.7 12.4 12.9-4.2-4.2 12.9L58 35l-12.4 5.7 4.2 12.9-12.9-4.2L32 58l-5.7-8.6-12.9 4.2 4.2-12.9L5 35l12.4-5.7-4.2-12.9 12.9 4.2z"/>
+  <circle cx="32" cy="33" r="11" fill="#f5eeda"/>
+  <circle cx="32" cy="33" r="5.5" fill="#465c42"/>
+  <circle cx="51" cy="13" r="4" fill="#6fe3c2"/>
+  <circle cx="12" cy="50" r="3" fill="#d4f35a"/>
+</svg>

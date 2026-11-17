@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10202b">
+<title>Chroma Clash — an original 3D online arena shooter</title>
+<meta name="description" content="Chroma Clash is a fast, colorful 3D online arena shooter from the Afterclass Garage. Queue for 1v1, 2v2 or 5v5, unlock splatters, and paint the plaza.">
+<link rel="icon" href="./assets/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="scene" aria-label="Chroma Clash 3D arena"></canvas>
+
+  <div id="menu-grade" aria-hidden="true"></div>
+
+  <section id="lobby" class="screen" aria-label="Chroma Clash lobby">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Chroma Clash">
+        <img src="./assets/logo.svg" alt="">
+        <span>CHROMA <b>CLASH</b></span>
+      </a>
+      <a href="../" class="garage-back">← Garage</a>
+      <p class="server-pill"><i></i><span id="server-status">CONNECTING</span></p>
+    </header>
+
+    <div class="lobby-layout">
+      <div class="lobby-main">
+        <p class="eyebrow">AFTERCLASS GARAGE / ONLINE ARENA</p>
+        <h1>CHROMA<br><em>CLASH.</em></h1>
+        <p class="tagline">Paint the plaza. Own the block.</p>
+        <p class="lede">Fast, colorful 3D skirmishes with real opponents. Pick a loadout, queue up, and make a mess.</p>
+
+        <section class="panel account-card" aria-label="Your runner">
+          <div class="panel-head">
+            <h2>YOUR RUNNER</h2>
+            <span id="guest-badge" class="badge">GUEST</span>
+          </div>
+          <div class="account-line">
+            <span id="account-name">Loading…</span>
+            <span id="account-stardust" class="stardust">0 ✦</span>
+          </div>
+          <div class="level-line">
+            <span id="account-level">LEVEL 1</span>
+            <div class="xp-track"><i id="xp-fill"></i></div>
+            <span id="account-xp">0 / 200 XP</span>
+          </div>
+          <div class="account-actions">
+            <button id="link-button" class="button small" type="button">Save your progress</button>
+            <button id="login-button" class="button ghost small" type="button">Log in</button>
+            <button id="logout-button" class="button ghost small" type="button" hidden>New guest</button>
+          </div>
+          <form id="auth-form" hidden>
+            <p id="auth-title" class="auth-title">Save this runner</p>
+            <label>Runner name
+              <input name="username" minlength="3" maxlength="16" autocomplete="username" required>
+            </label>
+            <label>Password
+              <input name="password" type="password" minlength="8" maxlength="128" autocomplete="current-password" required>
+            </label>
+            <div class="auth-actions">
+              <button type="submit" class="button small" id="auth-submit">Save my progress</button>
+              <button type="button" class="button ghost small" id="auth-cancel">Cancel</button>
+            </div>
+            <p class="auth-note" id="auth-note">Your unlocks live on the game server. Linking a name keeps them across devices.</p>
+            <p class="auth-error" id="auth-error" role="alert"></p>
+          </form>
+        </section>
+
+        <section class="panel queue-card" aria-label="Matchmaking">
+          <div class="panel-head">
+            <h2>FIND A MATCH</h2>
+            <span class="badge live">LIVE ONLINE</span>
+          </div>
+          <div class="queue-grid">
+            <button class="queue-button" type="button" data-size="1">
+              <b>1v1</b><span>DUEL</span><small>You vs one rival</small>
+            </button>
+            <button class="queue-button" type="button" data-size="2">
+              <b>2v2</b><span>TAG TEAM</span><small>Pairs, picked apart</small>
+            </button>
+            <button class="queue-button" type="button" data-size="5">
+              <b>5v5</b><span>FULL HOUSE</span><small>The whole crew</small>
+            </button>
+          </div>
+          <p class="queue-status" id="queue-status" role="status" aria-live="polite">Pick a size to join the queue.</p>
+          <div class="queue-actions">
+            <button id="cancel-queue" class="button ghost small" type="button" hidden>Leave queue</button>
+            <span id="population" class="population"></span>
+          </div>
+          <p class="queue-hint">Matches start when enough runners are queued. If the plaza is quiet, practice bots fill the empty slots after a short wait.</p>
+        </section>
+
+        <p class="fine-print">Desktop with mouse and keyboard recommended. Progress and purchases are verified and stored on the game server, not in your browser.</p>
+      </div>
+
+      <aside class="lobby-side">
+        <section class="panel" aria-label="Loadout">
+          <div class="panel-head">
+            <h2>LOADOUT</h2>
+            <span class="badge">SAVED SERVER-SIDE</span>
+          </div>
+          <div id="loadout-grid" class="loadout-grid"></div>
+          <p class="loadout-note">Changes apply when your next match starts.</p>
+        </section>
+
+        <section class="panel" aria-label="Unlockables">
+          <div class="panel-head">
+            <h2>UNLOCKABLES</h2>
+            <span class="badge">STARDUST</span>
+          </div>
+          <p class="shop-lede">Earn Stardust by finishing matches. New gear unlocks at higher levels.</p>
+          <div id="shop-grid" class="shop-grid"></div>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="lobby-footer">
+      <span>WASD MOVE · MOUSE AIM · CLICK FIRE · R RELOAD · V MELEE · F HEAL · SHIFT SPRINT · SPACE JUMP</span>
+      <span>ORIGINAL GAME · NO COPIED ASSETS</span>
+    </footer>
+  </section>
+
+  <section id="hud" class="screen" hidden aria-label="Match">
+    <div class="hud-top">
+      <div class="team-score citrus"><span id="score-citrus">0</span><small>CITRUS</small></div>
+      <div class="timer"><b id="match-timer">4:00</b><small id="match-mode">1v1</small></div>
+      <div class="team-score berry"><small>BERRY</small><span id="score-berry">0</span></div>
+    </div>
+
+    <div id="killfeed" class="killfeed" aria-live="polite"></div>
+
+    <div id="crosshair" class="crosshair" aria-hidden="true">
+      <i></i><i></i><i></i><i></i>
+      <span id="hitmarker"></span>
+    </div>
+
+    <div id="respawn" class="respawn" hidden>
+      <p>BACK IN</p>
+      <b id="respawn-time">3</b>
+      <small>Watch the angles.</small>
+    </div>
+
+    <div id="damage-flash" class="damage-flash" aria-hidden="true"></div>
+
+    <div class="hud-bottom">
+      <div class="vitals">
+        <span class="hud-label">VITALS</span>
+        <div class="health-track"><i id="health-fill"></i></div>
+        <div class="vitals-line"><b id="health-value">100</b><span id="heal-state">JUICE BOX ×2</span></div>
+      </div>
+      <div class="ammo">
+        <div class="ammo-line"><b id="ammo-value">12</b><span>/ <i id="ammo-mag">12</i></span></div>
+        <span id="weapon-name">POP PISTOL</span>
+        <span id="reload-state" class="reload-state"></span>
+      </div>
+    </div>
+
+    <div id="touch-note" class="touch-note" hidden>Mouse and keyboard required for combat.</div>
+
+    <div id="scoreboard" class="scoreboard" hidden>
+      <div class="scoreboard-head"><span>RUNNER</span><span>TEAM</span><span>ELIMS</span><span>DEATHS</span><span>HEALS</span></div>
+      <div id="scoreboard-body"></div>
+    </div>
+
+    <div id="pause" class="modal" hidden>
+      <div class="modal-card">
+        <p class="eyebrow">MATCH PAUSED FOR YOU</p>
+        <h2>Take a breath.</h2>
+        <p class="modal-note">The match keeps running while this menu is open. Click resume to jump back in.</p>
+        <label class="setting">Aim sensitivity
+          <input id="sensitivity" type="range" min="0.6" max="2.4" step="0.1" value="1">
+        </label>
+        <div class="modal-actions">
+          <button id="resume-button" class="button" type="button">Resume match</button>
+          <button id="leave-button" class="button ghost" type="button">Leave match</button>
+        </div>
+        <p class="controls-list">WASD move · Shift sprint · Space jump<br>Left click fire · R reload · V melee · F heal<br>Tab scoreboard · Esc pause</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="result" class="screen modal" hidden aria-label="Match result">
+    <div class="modal-card result-card">
+      <p class="eyebrow" id="result-kicker">MATCH COMPLETE</p>
+      <h2 id="result-title">Victory.</h2>
+      <p class="result-score" id="result-score">20 — 12</p>
+      <div class="result-stats" id="result-stats"></div>
+      <div class="reward-row" id="reward-row"></div>
+      <button id="result-continue" class="button" type="button">Back to the lobby</button>
+    </div>
+  </section>
+
+  <div id="connect-overlay" class="modal" hidden>
+    <div class="modal-card">
+      <p class="eyebrow">CHROMA CLASH</p>
+      <h2 id="connect-title">Connecting…</h2>
+      <p class="modal-note" id="connect-note">Waking up the arena.</p>
+      <button id="connect-retry" class="button" type="button" hidden>Try again</button>
+    </div>
+  </div>
+
+  <div id="lock-prompt" class="lock-prompt" hidden>
+    <p>Click to take control</p>
+    <small>Mouse aim and click to fire</small>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="./config.js"></script>
+<script type="module" src="./dist/game.js"></script>
+</body>
+</html>

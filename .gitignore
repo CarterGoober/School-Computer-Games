@@ -2,3 +2,7 @@
 work/
 
 dist/
+
+chroma-arena/node_modules/
+chroma-arena/.server-data/
+chroma-arena/.env
