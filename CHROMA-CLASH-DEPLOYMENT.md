@@ -20,7 +20,7 @@ Reuse the existing Free project only after confirming capacity; do not upgrade o
 
 Apply `chroma-arena/database/schema.sql` in Supabase SQL Editor. First test against a development project; the included PGlite tests do not establish production credentials/network compatibility. The script creates only the isolated game schema; it never deletes existing tables.
 
-From **Connect**, obtain the PostgreSQL direct or **Session pooler** connection string (5432). Render may need the session pooler's IPv4 endpoint. Do NOT use transaction pooling (6543): the writer lock must belong to a persistent DB session. Enter the connection string only in Render's secret environment variable `CHROMA_DATABASE_URL`; never in client config, Git, chat or logs. TLS verification is enabled. Install the official database CA through NODE_EXTRA_CA_CERTS if needed; do not disable certificate verification.
+From **Connect**, obtain the PostgreSQL direct or **Session pooler** connection string (5432). Render may need the session pooler's IPv4 endpoint. Do NOT use transaction pooling (6543): the writer lock must belong to a persistent DB session. Enter the connection string only in Render's secret environment variable `CHROMA_DATABASE_URL`; never in client config, Git, chat or logs. TLS verification is enabled. For an untrusted Supabase certificate chain, configure the database-scoped CA below; do not disable certificate verification.
 
 The current adapter uses the trusted DB connection role. Prefer a dedicated login role with only schema usage and SELECT/INSERT/UPDATE on chroma_private.accounts; no DELETE required. Schema installation needs SQL Editor privileges. No SUPABASE_SERVICE_ROLE_KEY is used by this adapter and none should be put in the client.
 
@@ -88,3 +88,17 @@ Initial 2-player local measurement: 5.05 seconds, RSS 66.5 MB, CPU 161 ms user +
 ## Remaining external steps
 
 Schema not applied remotely; no real player file imported. Supabase DB connection/CA/role, Render account/repository authorization and stable secrets must be supplied securely. Real Render/Supabase startup, cold starts, WSS proxy, persistence across restarts and hosted latency/capacity remain unverified. Public deployment requires explicit approval.
+
+
+### Fix `SELF_SIGNED_CERT_IN_CHAIN` on Render
+
+This means Node cannot build a trusted chain for the database certificate. The server and migration tool now share a verified TLS configuration. URL parameters such as `sslmode=require`, `sslrootcert`, or `ssl=false` cannot override it. Hostname verification remains enabled.
+
+1. In the **Supabase project → Database → Settings → SSL configuration**, download the **server root certificate**. Use the official dashboard certificate, never a certificate copied from an untrusted connection. Supabase documents this for the Session Pooler: https://supabase.com/docs/guides/database/psql .
+2. In **Render → your Chroma Web Service → Environment → Secret Files → Add Secret File**, name it `supabase-ca.crt`. Paste the complete downloaded PEM certificate, including `BEGIN CERTIFICATE` and `END CERTIFICATE` lines, then save.
+3. Under that service's **Environment Variables**, add `CHROMA_DATABASE_CA_FILE` = `/etc/secrets/supabase-ca.crt`. Save. Leave the database URL pointed at the **Session pooler, port 5432**. Do not substitute the direct host or transaction pooler to bypass TLS.
+4. Redeploy the latest deployment-branch commit. If auto-deploy is enabled, saving/pushing may already trigger it. Confirm startup and `/api/health`, then test a login and progression save. No schema changes or account migration are needed for this fix.
+
+Only this PostgreSQL client trusts the extra certificate; normal public roots remain trusted too. A missing/malformed configured CA fails closed. Do not set `NODE_TLS_REJECT_UNAUTHORIZED=0` or `rejectUnauthorized:false`. If Supabase rotates its CA, replace this secret file with the current official certificate.
+
+Local tests cover pg URL override protection and TLS acceptance/rejection with a temporary test CA; they do not verify your Render-to-Supabase connection. That final check requires the configured Render service.

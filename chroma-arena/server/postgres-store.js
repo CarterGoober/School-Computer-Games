@@ -1,8 +1,9 @@
 import pg from 'pg';
+import {postgresConfig} from './postgres-config.js';
 import {Store} from './store.js';
 // One authoritative simulation writer. Use Supabase's direct connection or SESSION pooler.
 export class PostgresStore extends Store {
- constructor(url,options={}){super('unused');this.db=options.client||new pg.Client({connectionString:url,ssl:options.ssl??{rejectUnauthorized:true},connectionTimeoutMillis:10000,query_timeout:12000});this.failed=false;this.writeFailures=0;this.committed=new Map();this.versions=new Map();}
+ constructor(url,options={}){super('unused');this.db=options.client||new pg.Client(postgresConfig(url));this.failed=false;this.writeFailures=0;this.committed=new Map();this.versions=new Map();}
  async init(){await this.db.connect();this.db.on?.('error',()=>{this.failed=true;this.writeFailures++});const lock=await this.db.query("select pg_try_advisory_lock(748921451) locked");if(!lock.rows[0].locked){await this.db.end();throw Error('Another Chroma writer is active')}
  const {rows}=await this.db.query('select id,data,revision from chroma_private.accounts');for(const row of rows){this.accounts.set(row.id,row.data);this.committed.set(row.id,JSON.stringify(row.data));this.versions.set(row.id,Number(row.revision));if(row.data.usernameKey)this.usernameIndex.set(row.data.usernameKey,row.id)}this.ready=true;return this;}
  persist(){const snapshot=new Map([...this.accounts].map(([id,a])=>[id,JSON.stringify(a)]));
