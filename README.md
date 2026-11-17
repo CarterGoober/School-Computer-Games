@@ -222,6 +222,8 @@ Exact prices change; check the host's current pricing. Serverless static hosts (
 
 ## Deployment in brief
 
+For a **$0, always-on** deployment, use an Oracle Cloud Always Free VM with the included Docker + Caddy stack: see [`deploy/oracle-cloud.md`](deploy/oracle-cloud.md) and run `deploy/oracle-setup.sh` with a free `sslip.io` hostname. The static launch page is already publishable on GitHub Pages; the arena server needs the VM.
+
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for the full guide, including Docker, Fly.io, Render/Railway, GitHub Pages, environment variables, backups and a launch checklist.
 
 ```sh

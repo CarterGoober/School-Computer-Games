@@ -85,6 +85,10 @@ The image expects a writable `/data` volume. It copies the repository including 
 
 ## 5. Hosting recipes
 
+### Oracle Cloud Always Free (recommended free option)
+
+See [`deploy/oracle-cloud.md`](../deploy/oracle-cloud.md). It uses a free VM, Docker Compose, a named persistent volume and Caddy for automatic HTTPS/WSS, and is the only route here that is both $0 and always-on with durable storage.
+
 ### Fly.io (single machine + volume)
 
 ```sh
