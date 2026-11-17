@@ -2,12 +2,14 @@
 // authoritative WebSocket arena on a single Node process.
 
 import http from 'node:http';
+import { timingSafeEqual } from 'node:crypto';
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { WebSocketServer } from 'ws';
+import { PostgresStore } from './postgres-store.js';
 import { Store } from './store.js';
 import { Hub } from './hub.js';
 import {
@@ -51,7 +53,7 @@ function allowedOrigin(origin, request, allowed) {
     const parsed = new URL(origin);
     const host = request.headers.host;
     if (host && parsed.host === host) return true;
-    if (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') return true;
+    if (process.env.NODE_ENV!=='production'&&(parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) return true;
   } catch {
     return false;
   }
@@ -196,6 +198,7 @@ export async function createGameServer(options = {}) {
     || `'self' ${DEFAULT_FRAME_ANCESTOR}`;
 
   let secret = options.secret || loadSecret();
+  if(process.env.NODE_ENV==='production'&&(!secret||!process.env.CHROMA_DATABASE_URL))throw Error('Production requires stable CHROMA_SECRET and CHROMA_DATABASE_URL');
   if (!secret) {
     const secretFile = path.join(dataDir, 'secret');
     try {
@@ -210,7 +213,7 @@ export async function createGameServer(options = {}) {
     }
   }
 
-  const store = await new Store(path.join(dataDir, 'accounts.json')).init();
+  const store = options.store || await (process.env.CHROMA_DATABASE_URL ? new PostgresStore(process.env.CHROMA_DATABASE_URL) : new Store(path.join(dataDir, 'accounts.json'))).init();
   const hub = new Hub({
     store,
     secret,
@@ -224,6 +227,8 @@ export async function createGameServer(options = {}) {
     const now = Date.now();
     const entry = authHits.get(ip);
     if (!entry || now - entry.start > 60000) {
+      for(const [key,value]of authHits)if(now-value.start>60000)authHits.delete(key);
+      if(authHits.size>10000)return true;
       authHits.set(ip, { start: now, count: 1 });
       return false;
     }
@@ -242,6 +247,8 @@ export async function createGameServer(options = {}) {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
     if(url.pathname.startsWith('/chroma/api/'))url.pathname=url.pathname.slice(7);
+    if(url.pathname==='/api/metrics'){const expected=process.env.CHROMA_METRICS_TOKEN;const actual=(request.headers.authorization||'').replace(/^Bearer /,'');if(!expected||Buffer.byteLength(actual)!==Buffer.byteLength(expected)||!timingSafeEqual(Buffer.from(actual),Buffer.from(expected))){sendJson(response,404,{error:'Not found'});return;}sendJson(response,200,{connections:hub.connections.size,memory:process.memoryUsage(),cpu:process.cpuUsage(),messages:hub.messagesReceived||0,writeFailures:store.writeFailures||0,matches:[...hub.matches.values()].map(m=>m.metrics||{})});return;}
+    if(store.failed){sendJson(response,503,{error:'Account storage unavailable. Please retry later.'});return;}
     const cors = corsHeaders(request, allowed);
 
     if (request.method === 'OPTIONS') {
@@ -304,6 +311,7 @@ export async function createGameServer(options = {}) {
 
       if (request.method === 'POST' && url.pathname === '/api/session') {
         const account = store.createGuest();
+        await store.flush();
         sendJson(response, 200, {
           token: issueToken(secret, account.id),
           profile: publicProfile(account),
@@ -318,6 +326,7 @@ export async function createGameServer(options = {}) {
         const account = existing && existing.guest
           ? await store.upgradeGuest(existing.id, body.username, body.password)
           : await store.createAccount(body.username, body.password);
+        await store.flush();
         sendJson(response, 200, {
           token: issueToken(secret, account.id),
           profile: publicProfile(account),
@@ -329,6 +338,7 @@ export async function createGameServer(options = {}) {
       if (request.method === 'POST' && url.pathname === '/api/login') {
         const body = await readJson(request);
         const account = await store.login(body.username, body.password);
+        await store.flush();
         sendJson(response, 200, {
           token: issueToken(secret, account.id),
           profile: publicProfile(account),
@@ -360,7 +370,9 @@ export async function createGameServer(options = {}) {
           return;
         }
         const body = await readJson(request);
+        await store.flush();
         const result = store.setLoadout(account.id, body.loadout);
+        await store.flush();
         sendJson(response, result.ok ? 200 : 400, {
           ok: result.ok,
           error: result.ok ? undefined : result.error,
@@ -377,6 +389,7 @@ export async function createGameServer(options = {}) {
         }
         const body = await readJson(request);
         const result = store.buy(account.id, body.itemId, ITEMS);
+        await store.flush();
         const current = store.get(account.id);
         sendJson(response, result.ok ? 200 : 400, {
           ok: result.ok,
@@ -432,9 +445,10 @@ export async function createGameServer(options = {}) {
     if (closing) return;
     closing = true;
     hub.stop();
+    for(const socket of wss.clients)socket.terminate();
     await new Promise((resolve) => wss.close(() => resolve()));
     await new Promise((resolve) => server.close(() => resolve()));
-    await store.flush();
+    if(store.close)await store.close();else await store.flush();
   }
 
   return { server, hub, store, secret, close };
@@ -446,15 +460,15 @@ const isMain = process.argv[1]
 if (isMain) {
   const port = Number(process.env.PORT || 8787);
   const host = process.env.HOST || '0.0.0.0';
-  createGameServer().then(({ server }) => {
+  createGameServer().then(({ server, close }) => {
     server.listen(port, host, () => {
       console.log(`[server] Chroma Clash listening on http://${host}:${port}`);
       console.log(`[server] game page: http://localhost:${port}/chroma/`);
     });
     const shutdown = () => {
       console.log('[server] shutting down');
-      server.close(() => process.exit(0));
-      setTimeout(() => process.exit(0), 3000).unref();
+      close().then(()=>process.exit(0),()=>process.exit(1));
+      setTimeout(() => process.exit(1), 20000).unref();
     };
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);

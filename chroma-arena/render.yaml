@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: chroma-clash
+    runtime: node
+    plan: free
+    rootDir: chroma-arena
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: HOST
+        value: 0.0.0.0
+      - key: CHROMA_DATABASE_URL
+        sync: false
+      - key: CHROMA_SECRET
+        sync: false
+      - key: CHROMA_ALLOWED_ORIGINS
+        sync: false
+      - key: CHROMA_METRICS_TOKEN
+        sync: false

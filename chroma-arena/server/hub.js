@@ -46,7 +46,8 @@ export class Hub {
   }
 
   safeSend(conn, message) {
-    if (!conn || !conn.socket || conn.socket.readyState !== 1) return;
+    if (!conn || conn.closed || !conn.socket || conn.socket.readyState !== 1) return;
+    if(conn.socket.bufferedAmount>262144){this.closeConn(conn,'Slow connection');return;}
     try {
       conn.socket.send(JSON.stringify(message));
     } catch {
@@ -65,6 +66,8 @@ export class Hub {
   }
 
   handleSocket(socket, request) {
+    const ip=request?.socket?.remoteAddress||'unknown';
+    if([...this.connections.values()].filter(c=>c.ip===ip).length>=20){socket.close(1013,'Connection limit');return;}
     if (this.connections.size >= MAX_CLIENTS) {
       try { socket.close(1013, 'Arena is full'); } catch { /* noop */ }
       return;
@@ -101,7 +104,9 @@ export class Hub {
   }
 
   receive(conn, data) {
+    if(conn.closed||this.store.failed){this.closeConn(conn,'Storage or session unavailable');return;}
     const now = Date.now();
+    this.messagesReceived=(this.messagesReceived||0)+1;
     if (now - conn.messageWindowStart > 1000) {
       conn.messageWindowStart = now;
       conn.messageCount = 0;
@@ -129,7 +134,7 @@ export class Hub {
       return;
     }
     if (message.t === 'auth') {
-      this.handleAuth(conn, message);
+      if(conn.authPending)return;conn.authPending=true;this.handleAuth(conn, message).catch(()=>this.closeConn(conn,'Storage unavailable')).finally(()=>{conn.authPending=false});
       return;
     }
     if (!conn.authed) {
@@ -139,8 +144,8 @@ export class Hub {
     if (message.t === 'queue') this.handleQueue(conn, message);
     else if (message.t === 'cancel') this.handleCancel(conn);
     else if (message.t === 'leave') this.handleLeave(conn);
-    else if (message.t === 'loadout') this.handleLoadout(conn, message);
-    else if (message.t === 'buy') this.handleBuy(conn, message);
+    else if (message.t === 'loadout') this.handleLoadout(conn, message).catch(()=>this.closeConn(conn,'Save unavailable'));
+    else if (message.t === 'buy') this.handleBuy(conn, message).catch(()=>this.closeConn(conn,'Save unavailable'));
     else this.handleMatchMessage(conn, message);
   }
 
@@ -148,6 +153,8 @@ export class Hub {
     const now = Date.now();
     const entry = this.authAttempts.get(ip);
     if (!entry || now - entry.start > AUTH_WINDOW_MS) {
+      for(const [key,value]of this.authAttempts)if(now-value.start>AUTH_WINDOW_MS)this.authAttempts.delete(key);
+      if(this.authAttempts.size>10000)return false;
       this.authAttempts.set(ip, { start: now, count: 1 });
       return true;
     }
@@ -156,7 +163,8 @@ export class Hub {
     return true;
   }
 
-  handleAuth(conn, message) {
+  async handleAuth(conn, message) {
+    await this.store.flush();if(conn.closed)return;
     if (!this.authAllowed(conn.ip)) {
       this.safeSend(conn, { t: 'authError', code: 'RATE', message: 'Too many attempts. Wait a minute.' });
       this.closeConn(conn, 'Auth rate limit');
@@ -180,6 +188,7 @@ export class Hub {
     conn.authed = true;
     this.byAccount.set(account.id, conn);
     this.store.touch(account.id);
+    await this.store.flush();if(conn.closed)return;
     this.safeSend(conn, {
       t: 'ready',
       profile: publicProfile(account),
@@ -299,7 +308,7 @@ export class Hub {
       seated: plan.seated,
       botCounts: plan.botCounts,
       emit: (connId, message) => this.sendById(connId, message),
-      onEnd: (finished) => this.finishMatch(finished),
+      onEnd: (finished) => this.finishMatch(finished).catch(()=>{for(const conn of this.connections.values())this.closeConn(conn,'Save unavailable')}),
       now: this.now
     });
 
@@ -342,12 +351,13 @@ export class Hub {
     this.broadcastQueueCounts();
   }
 
-  handleLoadout(conn, message) {
+  async handleLoadout(conn, message) {
     if (conn.match) {
       this.safeSend(conn, { t: 'error', code: 'IN_MATCH', message: 'Finish the match before editing your loadout.' });
       return;
     }
     const result = this.store.setLoadout(conn.accountId, message.loadout);
+    await this.store.flush();
     if (!result.ok) {
       this.safeSend(conn, { t: 'error', code: result.code, message: result.error });
       return;
@@ -359,12 +369,13 @@ export class Hub {
     });
   }
 
-  handleBuy(conn, message) {
+  async handleBuy(conn, message) {
     if (conn.match) {
       this.safeSend(conn, { t: 'error', code: 'IN_MATCH', message: 'Finish the match before visiting the shop.' });
       return;
     }
     const result = this.store.buy(conn.accountId, message.itemId, ITEMS);
+    await this.store.flush();
     if (!result.ok) {
       this.safeSend(conn, {
         t: 'shopResult', ok: false, code: result.code, message: result.error,
@@ -381,7 +392,7 @@ export class Hub {
     });
   }
 
-  finishMatch(match) {
+  async finishMatch(match) {
     if (match.settled) return;
     match.settled = true;
     for (const result of match.results || []) {
@@ -391,6 +402,7 @@ export class Hub {
         won: result.won,
         stats: result.stats
       });
+      await this.store.flush();
       const conn = this.byAccount.get(result.accountId);
       if (conn && conn.match === match) {
         conn.match = null;

@@ -147,16 +147,15 @@ function describeError(error) {
   return message;
 }
 
-async function connectAndEnter() {
-  ui.connecting('Connecting…', 'Waking up the arena.');
-  try {
-    const token = await net.ensureSession();
-    await net.connect(token);
-    ui.hideConnecting();
-  } catch (error) {
-    ui.setStatus('OFFLINE', 'bad');
-    ui.connecting('Arena offline', describeError(error), true);
-  }
+let connectionTask=null;
+async function connectAndEnter(){
+ if(connectionTask)return connectionTask;
+ clearTimeout(reconnectTimer);
+ connectionTask=(async()=>{for(let attempt=0;attempt<6;attempt++){
+  ui.connecting(attempt?(running?'Reconnecting…':'Waking up server…'):'Connecting to multiplayer…','');
+  try{resumedDuringReconnect=false;const token=await net.ensureSession();await net.connect(token);ui.hideConnecting();return}catch{if(attempt<5)await new Promise(resolve=>{reconnectTimer=setTimeout(resolve,Math.min(15000,1000*2**attempt)*(0.75+Math.random()*0.5))})}
+ }ui.setStatus('OFFLINE','bad');ui.connecting('Unable to connect','Please try again.',true);})().finally(()=>{connectionTask=null});
+ return connectionTask;
 }
 
 net.on('ready', (message) => {
@@ -302,58 +301,13 @@ net.on('profile', (message) => {
   }
 });
 
-net.on('authError', async (message) => {
-  if (recoveringSession) {
-    ui.connecting('Session expired', message.message || 'Reload the page to start a new runner.', true);
-    return;
-  }
-  recoveringSession = true;
-  net.clearToken();
-  try {
-    await connectAndEnter();
-  } finally {
-    recoveringSession = false;
-  }
+net.on('authError',()=>{net.clearToken();net.close();if(!connectionTask)connectAndEnter();});
+net.on('closed',info=>{
+ if(info.intentional)return;
+ ui.setStatus('OFFLINE','bad');
+ if(running){paused=true;suppressPause=true;controls?.clearHeld();ui.showPause(false);ui.setLockPrompt(false);}
+ ui.connecting('Connection lost','');connectAndEnter();
 });
-
-net.on('closed', (info) => {
-  if (info.intentional) return;
-  ui.setStatus('OFFLINE', 'bad');
-  if (running) {
-    paused = true;
-    suppressPause = true;
-    controls?.clearHeld();
-    ui.showPause(false);
-    ui.setLockPrompt(false);
-    ui.connecting('Reconnecting…', 'Holding your spot in the match for a few seconds.');
-    attemptReconnect(0);
-  } else {
-    ui.connecting('Disconnected', 'The arena server closed the connection.', true);
-  }
-});
-
-function attemptReconnect(attempt) {
-  clearTimeout(reconnectTimer);
-  if (attempt >= 5) {
-    ui.connecting(
-      'Connection lost',
-      'The arena is unreachable. Check your connection, then try again.',
-      true
-    );
-    return;
-  }
-  reconnectTimer = setTimeout(async () => {
-    try {
-      resumedDuringReconnect = false;
-      await net.connect(net.token);
-      ui.hideConnecting();
-      paused = false;
-      ui.setLockPrompt(true);
-    } catch {
-      attemptReconnect(attempt + 1);
-    }
-  }, Math.min(4000, 500 * 1.8 ** attempt));
-}
 
 // ---------- lobby actions ----------
 

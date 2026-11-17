@@ -36,6 +36,7 @@ var Net = class {
   }
   async request(path, options = {}) {
     const response = await fetch(`${this.base}${path}`, {
+      signal: AbortSignal.timeout(7e4),
       method: options.method || "GET",
       headers: {
         "Content-Type": "application/json",
@@ -79,7 +80,8 @@ var Net = class {
         await this.request("/api/profile", { token: existing });
         this.token = existing;
         return existing;
-      } catch {
+      } catch (error) {
+        if (error.status !== 401) throw error;
         this.clearToken();
       }
     }
@@ -104,6 +106,10 @@ var Net = class {
       const timeout = setTimeout(() => {
         if (settled) return;
         settled = true;
+        if (socket) {
+          socket.__chromaIntentional = true;
+          socket.close();
+        }
         reject(new Error("The arena server did not respond."));
       }, 12e3);
       let socket;
@@ -119,6 +125,10 @@ var Net = class {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
+        if (socket) {
+          socket.__chromaIntentional = true;
+          socket.close();
+        }
         reject(error);
       };
       this.authResolve = (payload) => {
@@ -139,6 +149,7 @@ var Net = class {
         } catch {
           return;
         }
+        if (this.socket !== socket || socket.__chromaIntentional) return;
         this.lastMessageAt = Date.now();
         if (message.t === "hello") {
           this.emit("hello", message);
@@ -159,6 +170,7 @@ var Net = class {
       socket.onerror = () => {
       };
       socket.onclose = () => {
+        if (this.socket !== socket) return;
         this.ready = false;
         if (!settled) fail(new Error("Could not reach the arena server."));
         this.emit("closed", { intentional: socket.__chromaIntentional === true });
@@ -166,7 +178,7 @@ var Net = class {
     });
   }
   send(message) {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    if (!this.ready || !this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
     this.socket.send(JSON.stringify(message));
     return true;
   }
@@ -23432,7 +23444,6 @@ var lastFireAt = 0;
 var pendingJump = false;
 var inputAccumulator = 0;
 var reconnectTimer = null;
-var recoveringSession = false;
 var sensitivity = 1;
 try {
   const saved = Number.parseFloat(localStorage.getItem("chroma-sensitivity") || "");
@@ -23529,23 +23540,31 @@ if (view) {
   connectAndEnter();
   requestAnimationFrame(frame);
 }
-function describeError(error) {
-  const message = error?.message || String(error);
-  if (/fetch|network|failed to fetch|load failed|websocket/i.test(message)) {
-    return `Could not reach the arena server at ${net.base}. If this page is hosted statically, set window.CHROMA_SERVER in chroma/config.js to the deployed game server.`;
-  }
-  return message;
-}
+var connectionTask = null;
 async function connectAndEnter() {
-  ui.connecting("Connecting\u2026", "Waking up the arena.");
-  try {
-    const token = await net.ensureSession();
-    await net.connect(token);
-    ui.hideConnecting();
-  } catch (error) {
+  if (connectionTask) return connectionTask;
+  clearTimeout(reconnectTimer);
+  connectionTask = (async () => {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      ui.connecting(attempt ? running ? "Reconnecting\u2026" : "Waking up server\u2026" : "Connecting to multiplayer\u2026", "");
+      try {
+        resumedDuringReconnect = false;
+        const token = await net.ensureSession();
+        await net.connect(token);
+        ui.hideConnecting();
+        return;
+      } catch {
+        if (attempt < 5) await new Promise((resolve) => {
+          reconnectTimer = setTimeout(resolve, Math.min(15e3, 1e3 * 2 ** attempt) * (0.75 + Math.random() * 0.5));
+        });
+      }
+    }
     ui.setStatus("OFFLINE", "bad");
-    ui.connecting("Arena offline", describeError(error), true);
-  }
+    ui.connecting("Unable to connect", "Please try again.", true);
+  })().finally(() => {
+    connectionTask = null;
+  });
+  return connectionTask;
 }
 net.on("ready", (message) => {
   profile = message.profile;
@@ -23676,18 +23695,10 @@ net.on("profile", (message) => {
     ui.renderProfile(profile, catalog);
   }
 });
-net.on("authError", async (message) => {
-  if (recoveringSession) {
-    ui.connecting("Session expired", message.message || "Reload the page to start a new runner.", true);
-    return;
-  }
-  recoveringSession = true;
+net.on("authError", () => {
   net.clearToken();
-  try {
-    await connectAndEnter();
-  } finally {
-    recoveringSession = false;
-  }
+  net.close();
+  if (!connectionTask) connectAndEnter();
 });
 net.on("closed", (info) => {
   if (info.intentional) return;
@@ -23698,34 +23709,10 @@ net.on("closed", (info) => {
     controls?.clearHeld();
     ui.showPause(false);
     ui.setLockPrompt(false);
-    ui.connecting("Reconnecting\u2026", "Holding your spot in the match for a few seconds.");
-    attemptReconnect(0);
-  } else {
-    ui.connecting("Disconnected", "The arena server closed the connection.", true);
   }
+  ui.connecting("Connection lost", "");
+  connectAndEnter();
 });
-function attemptReconnect(attempt) {
-  clearTimeout(reconnectTimer);
-  if (attempt >= 5) {
-    ui.connecting(
-      "Connection lost",
-      "The arena is unreachable. Check your connection, then try again.",
-      true
-    );
-    return;
-  }
-  reconnectTimer = setTimeout(async () => {
-    try {
-      resumedDuringReconnect = false;
-      await net.connect(net.token);
-      ui.hideConnecting();
-      paused = false;
-      ui.setLockPrompt(true);
-    } catch {
-      attemptReconnect(attempt + 1);
-    }
-  }, Math.min(4e3, 500 * 1.8 ** attempt));
-}
 function queue(size) {
   if (!net.ready) return ui.toast("Still connecting to the arena.");
   net.send({ t: "queue", size });

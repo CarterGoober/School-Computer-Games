@@ -143,7 +143,7 @@ export class Match {
     this.running = true;
     this.sendMatchStart();
     this.broadcastState();
-    this.interval = setInterval(() => this.tick(1 / TICK_HZ), 1000 / TICK_HZ);
+    this.interval = setInterval(() => {const start=performance.now();this.tick(1 / TICK_HZ);const elapsed=performance.now()-start;this.metrics=this.metrics||{ticks:0,totalMs:0,maxMs:0};this.metrics.ticks++;this.metrics.totalMs+=elapsed;this.metrics.maxMs=Math.max(this.metrics.maxMs,elapsed)}, 1000 / TICK_HZ);
     this.interval.unref?.();
     return this;
   }

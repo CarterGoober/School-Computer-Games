@@ -6,3 +6,8 @@ dist/
 chroma-arena/node_modules/
 chroma-arena/.server-data/
 chroma-arena/.env
+
+**/accounts.json*
+**/.env
+**/.env.*
+!**/.env.example

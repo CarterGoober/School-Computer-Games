@@ -130,6 +130,7 @@ export class Store {
     if (this.isNameTaken(key)) throw new AuthError('NAME_TAKEN', 'That runner name is taken.');
     if (this.accounts.size >= MAX_ACCOUNTS) throw new AuthError('FULL', 'The arena is full. Try again later.');
     const { salt, hash } = await hashPassword(password);
+    if(this.isNameTaken(key))throw new AuthError('NAME_TAKEN','That runner name is taken.');
     const account = freshAccount({ name, usernameKey: key, guest: false, salt, hash });
     this.accounts.set(account.id, account);
     this.usernameIndex.set(key, account.id);
@@ -145,6 +146,7 @@ export class Store {
     validatePassword(password);
     if (this.isNameTaken(key)) throw new AuthError('NAME_TAKEN', 'That runner name is taken.');
     const { salt, hash } = await hashPassword(password);
+    if(this.isNameTaken(key,accountId))throw new AuthError('NAME_TAKEN','That runner name is taken.');
     account.name = name;
     account.usernameKey = key;
     account.guest = false;

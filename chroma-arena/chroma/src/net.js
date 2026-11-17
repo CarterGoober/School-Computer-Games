@@ -40,6 +40,7 @@ export class Net {
 
   async request(path, options = {}) {
     const response = await fetch(`${this.base}${path}`, {
+      signal: AbortSignal.timeout(70000),
       method: options.method || 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -74,7 +75,8 @@ export class Net {
         await this.request('/api/profile', { token: existing });
         this.token = existing;
         return existing;
-      } catch {
+      } catch(error) {
+        if(error.status!==401)throw error;
         this.clearToken();
       }
     }
@@ -99,6 +101,7 @@ export class Net {
       const timeout = setTimeout(() => {
         if (settled) return;
         settled = true;
+        if(socket){socket.__chromaIntentional=true;socket.close();}
         reject(new Error('The arena server did not respond.'));
       }, 12000);
 
@@ -116,6 +119,7 @@ export class Net {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
+        if(socket){socket.__chromaIntentional=true;socket.close();}
         reject(error);
       };
 
@@ -134,6 +138,7 @@ export class Net {
       socket.onmessage = (event) => {
         let message;
         try { message = JSON.parse(event.data); } catch { return; }
+        if(this.socket!==socket||socket.__chromaIntentional)return;
         this.lastMessageAt = Date.now();
         if (message.t === 'hello') {
           this.emit('hello', message);
@@ -153,6 +158,7 @@ export class Net {
       };
       socket.onerror = () => { /* close handler reports it */ };
       socket.onclose = () => {
+        if(this.socket!==socket)return;
         this.ready = false;
         if (!settled) fail(new Error('Could not reach the arena server.'));
         this.emit('closed', { intentional: socket.__chromaIntentional === true });
@@ -161,7 +167,7 @@ export class Net {
   }
 
   send(message) {
-    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+    if (!this.ready || !this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
     this.socket.send(JSON.stringify(message));
     return true;
   }
